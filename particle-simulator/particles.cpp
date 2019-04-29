@@ -160,7 +160,7 @@ void calculate_velocities() {
         Vector2d E;
         Vector2d Fb;
         double friction_coefficient = 0.0;
-        float B = 100000000;
+        float B = 10000000;
         for(std::vector<int>::size_type i = 0; i != particles.size(); i++) {
                 E.zero();
                 for(std::vector<int>::size_type j = 0; j != particles.size(); j++) {
@@ -170,8 +170,8 @@ void calculate_velocities() {
                         r = particles[i].position - particles[j].position;
                         E += r * (particles[j].q/(EPSILON_0*pow(r.magnitude(),3)));
                 }
-                //Fb = B*particles[i].q*rotate(particles[i].velocity,PI/2);
-                particles[i].velocity += (E*particles[i].q) * (TIME_SCALE / particles[i].m);
+                Fb = B*particles[i].q*rotate(particles[i].velocity,PI/2);
+                particles[i].velocity += (E*particles[i].q + Fb) * (TIME_SCALE / particles[i].m);
         }
 }
 
@@ -254,11 +254,14 @@ void update_particles(int t) {
 
 void init_particles_grid(int side_length)
 {
+	double x, y, m, q;
         for (int i=0; i<side_length*side_length; i++) {
-                int x = (X_SIZE/(side_length+1))*(i%side_length + 1);
-                int y = (Y_SIZE/(side_length+1))*(((int)(i/side_length)) + 1);
-                int m = rand() % 3 + 1;
-                int q = rand() % 4 - 1;
+                x = (X_SIZE/(side_length+1))*(i%side_length + 1);
+                y = (Y_SIZE/(side_length+1))*(((int)(i/side_length)) + 1);
+                //m = rand() % 3 + 1;
+                m = 1;
+                q = rand() % 4 - 1;
+                //q = 1;
                 if (q<=0) {
                         q-=1;
                 }
@@ -268,11 +271,12 @@ void init_particles_grid(int side_length)
 
 void init_particles_random(int num)
 {
+        double x, y, m, q;
         for(int i=0; i<num; i++) {
-                int x = rand() % X_SIZE;
-                int y = rand() % Y_SIZE;
-                int m = rand() % 3 + 1;
-                int q = rand() % 4 - 1;
+                x = rand() % X_SIZE;
+                y = rand() % Y_SIZE;
+                m = rand() % 3 + 1;
+                q = rand() % 4 - 1;
                 if (q<=0) {
                         q-=1;
                 }
@@ -285,8 +289,8 @@ void init_particles_random(int num)
 int main(int argc, char** argv) {
         srand(time(NULL));
 
-        //init_particles_random(20);
-        init_particles_grid(5);
+        init_particles_random(20);
+        //init_particles_grid(5);
 
         glutInit(&argc, argv);                 // Initialize GLUT
         glutInitWindowSize(X_SIZE, Y_SIZE);   // Set the window's initial width & height
