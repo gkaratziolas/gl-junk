@@ -20,6 +20,12 @@ const char *vertexShaderSource = "#version 330 core\n"
     "{\n"
     "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
     "}\0";
+const char *vertexShaderSource1 = "#version 330 core\n"
+    "layout (location = 0) in vec2 aPos;\n"
+    "void main()\n"
+    "{\n"
+    "   gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);\n"
+    "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
     "uniform vec3 uColour;\n"
     "out vec4 FragColor;\n"
@@ -77,6 +83,16 @@ int main()
         glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
+    int vertexShader1 = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vertexShader1, 1, &vertexShaderSource1, NULL);
+    glCompileShader(vertexShader1);
+    // check for shader compile errors
+    glGetShaderiv(vertexShader1, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(vertexShader1, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
     // fragment shader
     int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
@@ -89,7 +105,8 @@ int main()
         std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
     }
     // link shaders
-    int shaderProgram = glCreateProgram();
+    int shaderProgram  = glCreateProgram();
+    int shaderTriangle = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
@@ -99,14 +116,27 @@ int main()
         glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
         std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
     }
+    glAttachShader(shaderTriangle, vertexShader1);
+    glAttachShader(shaderTriangle, fragmentShader);
+    glLinkProgram(shaderTriangle);
+    // check for linking errors
+    glGetProgramiv(shaderTriangle, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderTriangle, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+    }
     glDeleteShader(vertexShader);
+    glDeleteShader(vertexShader1);
     glDeleteShader(fragmentShader);
-
-    glUseProgram(shaderProgram);
-    glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 1.0f, 1.0f, 1.0f);
 
     // set up vertex data (and buffer(s)) and configure vertex attributes
     // ------------------------------------------------------------------
+    
+    float triangle[] = {
+        0.7f, 0.8f, 
+        0.9f, 0.8f,
+        0.8f, 0.9f
+    };
     float vertices[] = {
         -0.5f,  0.0f, 0.0f, // left  
          0.5f,  0.0f, 0.0f, // right 
@@ -119,8 +149,11 @@ int main()
     };
 
     unsigned int VBO, VAO, EBO;
+    unsigned int VBOt, VAOt;
     glGenVertexArrays(1, &VAO);
+    glGenVertexArrays(1, &VAOt);
     glGenBuffers(1, &VBO);
+    glGenBuffers(1, &VBOt);
     glGenBuffers(1, &EBO);
     // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
     glBindVertexArray(VAO);
@@ -137,6 +170,13 @@ int main()
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
 
+    glBindVertexArray(VAOt);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBOt);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangle), triangle, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
     glBindVertexArray(0); 
@@ -145,6 +185,10 @@ int main()
     // -----------
     float blue = 0.f;
     clock_t begin = clock();
+
+    glUseProgram(shaderProgram);
+    glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 1.0f, 1.0f, 1.0f);
+
     while (!glfwWindowShouldClose(window))
     {  
         blue = (1.0f + sin( 0.00003f * double(clock()-begin) ))/2.0f;
@@ -163,6 +207,11 @@ int main()
         glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 1.0f-blue, 0.0f, blue);
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+ 
+        glUseProgram(shaderTriangle);
+        glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 1.0f-blue, blue, 0.0f);
+        glBindVertexArray(VAOt);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindVertexArray(0);
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
