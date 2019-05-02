@@ -21,10 +21,11 @@ const char *vertexShaderSource = "#version 330 core\n"
     "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
     "}\0";
 const char *vertexShaderSource1 = "#version 330 core\n"
+    "uniform float offset;\n"
     "layout (location = 0) in vec2 aPos;\n"
     "void main()\n"
     "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, 0.0, 1.0);\n"
+    "   gl_Position = vec4((aPos.x-offset), aPos.y, 0.0, 1.0);\n"
     "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
     "uniform vec3 uColour;\n"
@@ -188,11 +189,11 @@ int main()
 
     glUseProgram(shaderProgram);
     glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 1.0f, 1.0f, 1.0f);
-
+    float offset = 0.f;
     while (!glfwWindowShouldClose(window))
     {  
-        blue = (1.0f + sin( 0.00003f * double(clock()-begin) ))/2.0f;
-
+        blue = (1.0f + sin( 0.000003f * double(clock()-begin) ))/2.0f;
+        offset += 0.0001f;
         // input
         // -----
         processInput(window);
@@ -209,8 +210,11 @@ int main()
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
  
         glUseProgram(shaderTriangle);
-        glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 1.0f-blue, blue, 0.0f);
+        glUniform3f(glGetUniformLocation(shaderTriangle, "uColour"), 1.0f-blue, blue, 0.0f);
+        glUniform1f(glGetUniformLocation(shaderTriangle, "offset"),offset);
         glBindVertexArray(VAOt);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glUniform1f(glGetUniformLocation(shaderTriangle, "offset"),offset/2.f);
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindVertexArray(0);
  
