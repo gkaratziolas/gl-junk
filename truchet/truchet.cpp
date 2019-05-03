@@ -6,9 +6,9 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
+#include <random>
 #include <cmath>
 #include <ctime>
-#include <vector>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -203,6 +203,9 @@ int main()
     projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
+    std::random_device dev;
+    std::mt19937 rng(dev());
+    std::uniform_int_distribution<std::mt19937::result_type> dist2(0,1);
 
     int num_tiles_x = 16;
     int num_tiles_y = 16;
@@ -212,12 +215,12 @@ int main()
     for (i=0; i<num_tiles_x; i++) {
         tiles[i] = (struct tile *)malloc(num_tiles_y * sizeof(struct tile));
         for (j=0; j<num_tiles_y;j++) {
-            tiles[i][j].position.x = 0.125f*(i-7.5f);
-            tiles[i][j].position.y = 0.125f*(j-7.5f);
+            tiles[i][j].position.x = 2.0f/num_tiles_x*(i-(num_tiles_x-1)/2.0f);
+            tiles[i][j].position.y = 2.0f/num_tiles_y*(j-(num_tiles_y-1)/2.0f);
             tiles[i][j].position.z = 0.0f;
 
-            tiles[i][j].rotation.x = 0;
-            tiles[i][j].rotation.y = 0;
+            tiles[i][j].rotation.x = 180.0f*dist2(rng);
+            tiles[i][j].rotation.y = 180.0f*dist2(rng);
 
             tiles[i][j].target_rotation.x = 0;
             tiles[i][j].target_rotation.y = 0;
@@ -234,7 +237,7 @@ int main()
 
     while (!glfwWindowShouldClose(window))
     {  
-        blue = 0.5f +  (1.0f + sin( 0.00003f * double(clock()-begin) ))/4.0f;
+        blue = 0.5f +  (1.0f + sin( 0.000003f * double(clock()-begin) ))/4.0f;
         // input
         // -----
         processInput(window);
@@ -251,7 +254,7 @@ int main()
         for (i=0; i<num_tiles_x; i++) {
             for (j=0; j<num_tiles_y; j++) {
                 
-                angle = 0.00001f * double(clock()-begin);
+                angle = 0.000001f * double(clock()-begin);
                 tiles[i][j].colour_a.x = blue;
                 tiles[i][j].colour_a.y = 0.0f;
                 tiles[i][j].colour_a.z = 0.0f;
@@ -259,8 +262,8 @@ int main()
                 trans = glm::mat4(1.0f);
                 trans = glm::translate(trans, tiles[i][j].position);
 
-                trans = glm::rotate(trans, glm::radians(angle), glm::vec3(0.0, 1.0, 0.0));
-                trans = glm::rotate(trans, glm::radians(angle), glm::vec3(1.0, 0.0, 0.0));
+                trans = glm::rotate(trans, glm::radians(tiles[i][j].rotation.x+angle*(i+1)*(j+1)), glm::vec3(0.0, 1.0, 0.0));
+                trans = glm::rotate(trans, glm::radians(tiles[i][j].rotation.y+angle*(i+1)*(j+1)), glm::vec3(1.0, 0.0, 0.0));
 
                 glUseProgram(shaderProgram);
 

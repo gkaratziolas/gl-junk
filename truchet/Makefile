@@ -1,7 +1,7 @@
 CC=g++
 LIBS = -lglfw -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 INCLUDES = -I../glad/include -I../glm
-CFLAGS = $(LIBS) $(INCLUDES)
+CFLAGS = $(LIBS) $(INCLUDES) -std=c++11
 OBJ=truchet
 
 make: truchet.cpp
