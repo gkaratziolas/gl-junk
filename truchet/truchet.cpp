@@ -8,9 +8,18 @@
 #include <iostream>
 #include <cmath>
 #include <ctime>
+#include <vector>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
+
+struct tile {
+    glm::vec3 position;
+    glm::vec2 rotation;
+    glm::vec2 target_rotation;
+    glm::vec3 colour_a;
+    glm::vec3 colour_b;
+};
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -122,7 +131,7 @@ int main()
      */
 
     float tile_width = 0.1f;
-    float tile_depth = 0.025f;
+    float tile_depth = 0.01f;
     float tile_vertices[] = {
         -tile_width / 2.0f, +tile_width / 2.0f, +tile_depth / 2.0f,
         +tile_width / 2.0f, +tile_width / 2.0f, +tile_depth / 2.0f,
@@ -187,16 +196,41 @@ int main()
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+    glm::mat4 trans      = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+    glm::mat4 view       = glm::mat4(1.0f);
+
+    projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+
+    int num_tiles_x = 16;
+    int num_tiles_y = 16;
+    int i, j;
+    float x, y;
+    struct tile **tiles = (struct tile **)malloc(num_tiles_x * sizeof(struct tile*));
+    for (i=0; i<num_tiles_x; i++) {
+        tiles[i] = (struct tile *)malloc(num_tiles_y * sizeof(struct tile));
+        for (j=0; j<num_tiles_y;j++) {
+            tiles[i][j].position.x = 0.125f*(i-7.5f);
+            tiles[i][j].position.y = 0.125f*(j-7.5f);
+            tiles[i][j].position.z = 0.0f;
+
+            tiles[i][j].rotation.x = 0;
+            tiles[i][j].rotation.y = 0;
+
+            tiles[i][j].target_rotation.x = 0;
+            tiles[i][j].target_rotation.y = 0;
+
+            tiles[i][j].colour_a = glm::vec3(0.0f, 0.0f, 0.0f);
+            tiles[i][j].colour_b = glm::vec3(1.0f, 1.0f, 1.0f);
+        }
+    }
+
     // render loop
     // -----------
     float blue = 0.f;
     clock_t begin = clock();
-
-    glm::mat4 trans      = glm::mat4(1.0f);
-    glm::mat4 projection = glm::mat4(1.0f);
-    glm::mat4 view       = glm::mat4(1.0f);
-    projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
     while (!glfwWindowShouldClose(window))
     {  
@@ -214,27 +248,31 @@ int main()
         int i, j;
         float dx, dy;
         float angle;
-        for (i=0; i<16; i++) {
-            dx = 0.125f*(i-7.5f);
-            for (j=0; j<16; j++) {
-                dy = 0.125*(j-7.5f);
-
-                angle = 0.001f * double(clock()-begin);
+        for (i=0; i<num_tiles_x; i++) {
+            for (j=0; j<num_tiles_y; j++) {
+                
+                angle = 0.00001f * double(clock()-begin);
+                tiles[i][j].colour_a.x = blue;
+                tiles[i][j].colour_a.y = 0.0f;
+                tiles[i][j].colour_a.z = 0.0f;
 
                 trans = glm::mat4(1.0f);
-                trans = glm::translate(trans, glm::vec3(dx, dy, 0.0f));
-                trans = glm::rotate(trans, glm::radians(angle*dx), glm::vec3(0.0, 1.0, 0.0));
-                trans = glm::rotate(trans, glm::radians(angle*dy), glm::vec3(1.0, 0.0, 0.0));
+                trans = glm::translate(trans, tiles[i][j].position);
+
+                trans = glm::rotate(trans, glm::radians(angle), glm::vec3(0.0, 1.0, 0.0));
+                trans = glm::rotate(trans, glm::radians(angle), glm::vec3(1.0, 0.0, 0.0));
 
                 glUseProgram(shaderProgram);
+
                 glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(trans));
                 glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
                 glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-                glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 1.0f, 1.0f, 1.0f);
+
+                glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_b.x, tiles[i][j].colour_b.y, tiles[i][j].colour_b.z);
                 glBindVertexArray(VAO_tile_blank);
                 glDrawElements(GL_TRIANGLES, 30, GL_UNSIGNED_INT, 0);
 
-                glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), blue, 0.0f, 0.0f);
+                glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_a.x, tiles[i][j].colour_a.y, tiles[i][j].colour_a.z);
                 glBindVertexArray(VAO_tile_colour);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
  
