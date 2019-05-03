@@ -326,11 +326,14 @@ int main()
             dx = dy = 0;
             if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
                 dy += 1;
-            } else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+            }
+            if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
                 dy -= 1;
-            } else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+            }
+            if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
                 dx += 1;
-            } else if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+            }
+            if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
                 dx -= 1;
             }
 
