@@ -18,10 +18,12 @@ const unsigned int SCR_HEIGHT = 800;
 
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
-    "uniform mat4 transform;\n"
+    "uniform mat4 model;\n"
+    "uniform mat4 view;\n"
+    "uniform mat4 projection;\n"
     "void main()\n"
     "{\n"
-    "   gl_Position = transform * vec4(aPos, 1.0f);\n"
+    "   gl_Position = projection * view * model * vec4(aPos, 1.0);\n"
     "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
     "uniform vec3 uColour;\n"
@@ -190,7 +192,11 @@ int main()
     float blue = 0.f;
     clock_t begin = clock();
 
-    glm::mat4 trans = glm::mat4(1.0f);
+    glm::mat4 trans      = glm::mat4(1.0f);
+    glm::mat4 projection = glm::mat4(1.0f);
+    glm::mat4 view       = glm::mat4(1.0f);
+    projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
     while (!glfwWindowShouldClose(window))
     {  
@@ -221,7 +227,9 @@ int main()
                 trans = glm::rotate(trans, glm::radians(angle*dy), glm::vec3(1.0, 0.0, 0.0));
 
                 glUseProgram(shaderProgram);
-                glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
+                glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "model"), 1, GL_FALSE, glm::value_ptr(trans));
+                glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
+                glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
                 glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 1.0f, 1.0f, 1.0f);
                 glBindVertexArray(VAO_tile_blank);
                 glDrawElements(GL_TRIANGLES, 30, GL_UNSIGNED_INT, 0);
