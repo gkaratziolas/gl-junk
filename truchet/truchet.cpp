@@ -1,6 +1,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <iostream>
 #include <cmath>
 #include <ctime>
@@ -14,10 +18,10 @@ const unsigned int SCR_HEIGHT = 800;
 
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
-    "uniform vec3 offset;\n"
+    "uniform mat4 transform;\n"
     "void main()\n"
     "{\n"
-    "   gl_Position = vec4(aPos.x + offset.x, aPos.y + offset.y, aPos.z + offset.z, 1.0);\n"
+    "   gl_Position = transform * vec4(aPos, 1.0f);\n"
     "}\0";
 const char *fragmentShaderSource = "#version 330 core\n"
     "uniform vec3 uColour;\n"
@@ -101,6 +105,8 @@ int main()
     glDeleteShader(vertexShader);
     glDeleteShader(fragmentShader);
 
+    glEnable(GL_DEPTH_TEST);
+
     /* 
      * Set up vertex data for truchet tile
      *
@@ -113,8 +119,8 @@ int main()
      *            2-------3
      */
 
-    float tile_width = 0.2f;
-    float tile_depth = 0.05f;
+    float tile_width = 0.1f;
+    float tile_depth = 0.025f;
     float tile_vertices[] = {
         -tile_width / 2.0f, +tile_width / 2.0f, +tile_depth / 2.0f,
         +tile_width / 2.0f, +tile_width / 2.0f, +tile_depth / 2.0f,
@@ -142,26 +148,14 @@ int main()
         6, 4, 0 
     };
     
-    unsigned int VAO_tile_colour, VAO_tile_blank;
-    unsigned int EBO_tile_colour, EBO_tile_blank;
+    unsigned int VAO_tile_blank, VAO_tile_colour;
+    unsigned int EBO_tile_blank, EBO_tile_colour;
     unsigned int VBO_tile;
-    glGenVertexArrays(1, &VAO_tile_colour);
     glGenVertexArrays(1, &VAO_tile_blank);
-    glGenBuffers(1, &EBO_tile_colour);
+    glGenVertexArrays(1, &VAO_tile_colour);
     glGenBuffers(1, &EBO_tile_blank);
+    glGenBuffers(1, &EBO_tile_colour);
     glGenBuffers(1, &VBO_tile);
-
-
-    glBindVertexArray(VAO_tile_colour);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO_tile);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(tile_vertices), tile_vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tile_colour);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(tile_colour_indicies), tile_colour_indicies, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
 
 
     glBindVertexArray(VAO_tile_blank);
@@ -176,6 +170,18 @@ int main()
     glEnableVertexAttribArray(0);
 
 
+    glBindVertexArray(VAO_tile_colour);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_tile);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tile_vertices), tile_vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tile_colour);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(tile_colour_indicies), tile_colour_indicies, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+
     glBindVertexArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -184,28 +190,50 @@ int main()
     float blue = 0.f;
     clock_t begin = clock();
 
+    glm::mat4 trans = glm::mat4(1.0f);
+
     while (!glfwWindowShouldClose(window))
     {  
         blue = 0.5f +  (1.0f + sin( 0.00003f * double(clock()-begin) ))/4.0f;
         // input
         // -----
         processInput(window);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // render
         // ------
         glClearColor(0.2f, 0.2f, blue, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
-        glUniform3f(glGetUniformLocation(shaderProgram, "offset"),  0.0f, 0.0f, 0.0f);
-        glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 1.0f, 1.0f, 1.0f);
-        glBindVertexArray(VAO_tile_colour);
-        glDrawElements(GL_TRIANGLES, 2, GL_UNSIGNED_INT, 0);
+        int i, j;
+        float dx, dy;
+        float angle;
+        for (i=0; i<16; i++) {
+            dx = 0.125f*(i-7.5f);
+            for (j=0; j<16; j++) {
+                dy = 0.125*(j-7.5f);
 
-        glBindVertexArray(VAO_tile_blank);
-        glDrawElements(GL_TRIANGLES, 10, GL_UNSIGNED_INT, 0);
+                angle = 0.001f * double(clock()-begin);
+
+                trans = glm::mat4(1.0f);
+                trans = glm::translate(trans, glm::vec3(dx, dy, 0.0f));
+                trans = glm::rotate(trans, glm::radians(angle*dx), glm::vec3(0.0, 1.0, 0.0));
+                trans = glm::rotate(trans, glm::radians(angle*dy), glm::vec3(1.0, 0.0, 0.0));
+
+                glUseProgram(shaderProgram);
+                glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "transform"), 1, GL_FALSE, glm::value_ptr(trans));
+                glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 1.0f, 1.0f, 1.0f);
+                glBindVertexArray(VAO_tile_blank);
+                glDrawElements(GL_TRIANGLES, 30, GL_UNSIGNED_INT, 0);
+
+                glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), blue, 0.0f, 0.0f);
+                glBindVertexArray(VAO_tile_colour);
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
  
-        glBindVertexArray(0);
+                glBindVertexArray(0);
+            }
+        }
+
  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
