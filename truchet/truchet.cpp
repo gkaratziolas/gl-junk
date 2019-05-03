@@ -22,8 +22,8 @@ struct tile {
 };
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 800;
+const unsigned int SCR_WIDTH = 1000;
+const unsigned int SCR_HEIGHT = 1000;
 
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
@@ -130,7 +130,7 @@ int main()
      *            2-------3
      */
 
-    float tile_width = 0.1f;
+    float tile_width = 0.115f;
     float tile_depth = 0.01f;
     float tile_vertices[] = {
         -tile_width / 2.0f, +tile_width / 2.0f, +tile_depth / 2.0f,
@@ -206,6 +206,7 @@ int main()
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist2(0,1);
+    std::uniform_int_distribution<std::mt19937::result_type> dist4(0,3);
 
     int num_tiles_x = 16;
     int num_tiles_y = 16;
@@ -222,8 +223,8 @@ int main()
             tiles[i][j].rotation.x = 180.0f*dist2(rng);
             tiles[i][j].rotation.y = 180.0f*dist2(rng);
 
-            tiles[i][j].target_rotation.x = 0;
-            tiles[i][j].target_rotation.y = 0;
+            tiles[i][j].target_rotation.x = tiles[i][j].rotation.x;
+            tiles[i][j].target_rotation.y = tiles[i][j].rotation.y;
 
             tiles[i][j].colour_a = glm::vec3(0.0f, 0.0f, 0.0f);
             tiles[i][j].colour_b = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -234,6 +235,13 @@ int main()
     // -----------
     float blue = 0.f;
     clock_t begin = clock();
+    clock_t accumilator = clock();
+    int time_step = 30000;
+    float angle_step = 5.f;
+    float z_step = 0.005f;
+    int player_x, player_y = 10;
+
+    int dx, dy = 0;
 
     while (!glfwWindowShouldClose(window))
     {  
@@ -254,6 +262,32 @@ int main()
         for (i=0; i<num_tiles_x; i++) {
             for (j=0; j<num_tiles_y; j++) {
                 
+                if (fabs(tiles[i][j].target_rotation.x - tiles[i][j].rotation.x) < angle_step) {
+                    tiles[i][j].rotation.x = tiles[i][j].target_rotation.x;
+                } else {
+                    if (tiles[i][j].target_rotation.x > tiles[i][j].rotation.x) {
+                        tiles[i][j].rotation.x += angle_step;
+                    } else {
+                        tiles[i][j].rotation.x -= angle_step;
+                    }
+                }
+                if (fabs(tiles[i][j].target_rotation.y - tiles[i][j].rotation.y) < angle_step) {
+                    tiles[i][j].rotation.y = tiles[i][j].target_rotation.y;
+                } else {
+                    if (tiles[i][j].target_rotation.y > tiles[i][j].rotation.y) {
+                        tiles[i][j].rotation.y += angle_step;
+                    } else {
+                        tiles[i][j].rotation.y -= angle_step;
+                    }
+                }
+
+                if (i == player_x && j == player_y) {
+                    tiles[i][j].position.z = 0.2f;
+                }
+                if (tiles[i][j].position.z > 0) {
+                    tiles[i][j].position.z -= z_step;
+                }
+
                 angle = 0.000001f * double(clock()-begin);
                 tiles[i][j].colour_a.x = blue;
                 tiles[i][j].colour_a.y = 0.0f;
@@ -262,8 +296,8 @@ int main()
                 trans = glm::mat4(1.0f);
                 trans = glm::translate(trans, tiles[i][j].position);
 
-                trans = glm::rotate(trans, glm::radians(tiles[i][j].rotation.x+angle*(i+1)*(j+1)), glm::vec3(0.0, 1.0, 0.0));
-                trans = glm::rotate(trans, glm::radians(tiles[i][j].rotation.y+angle*(i+1)*(j+1)), glm::vec3(1.0, 0.0, 0.0));
+                trans = glm::rotate(trans, glm::radians(tiles[i][j].rotation.x), glm::vec3(0.0, 1.0, 0.0));
+                trans = glm::rotate(trans, glm::radians(tiles[i][j].rotation.y), glm::vec3(1.0, 0.0, 0.0));
 
                 glUseProgram(shaderProgram);
 
@@ -275,11 +309,56 @@ int main()
                 glBindVertexArray(VAO_tile_blank);
                 glDrawElements(GL_TRIANGLES, 30, GL_UNSIGNED_INT, 0);
 
-                glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_a.x, tiles[i][j].colour_a.y, tiles[i][j].colour_a.z);
+                if (i == player_x && j == player_y) {
+                    glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 0.0f, blue, 0.0f);
+                } else {
+                    glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_a.x, tiles[i][j].colour_a.y, tiles[i][j].colour_a.z);
+                }
                 glBindVertexArray(VAO_tile_colour);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
  
                 glBindVertexArray(0);
+            }
+        }
+
+        if (clock() - accumilator > time_step) {
+            accumilator += time_step;
+            dx = dy = 0;
+            if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+                dy += 1;
+            } else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+                dy -= 1;
+            } else if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+                dx += 1;
+            } else if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+                dx -= 1;
+            }
+
+            if (dx == 1) {
+                tiles[player_x][player_y].target_rotation.x += 180.0f;
+                player_x++;
+                if (player_x==num_tiles_x) {
+                    player_x = 0;
+                }
+            } else if (dx == -1) {
+                tiles[player_x][player_y].target_rotation.x -= 180.0f;
+                player_x--;
+                if (player_x < 0) {
+                    player_x = num_tiles_x-1;
+                }
+            }
+            if (dy == 1) {
+                tiles[player_x][player_y].target_rotation.y += 180.0f;
+                player_y++;
+                if (player_y==num_tiles_y) {
+                    player_y = 0;
+                }
+            } else if (dy == -1) {
+                tiles[player_x][player_y].target_rotation.y -= 180.0f;
+                player_y--;
+                if (player_y < 0) {
+                    player_y = num_tiles_y-1;
+                }
             }
         }
 
@@ -308,9 +387,9 @@ void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
-    } else if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+    } else if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    } else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+    } else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     }
 }
