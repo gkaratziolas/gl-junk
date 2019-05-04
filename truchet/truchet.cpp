@@ -26,10 +26,10 @@ const unsigned int SCR_WIDTH = 1000;
 const unsigned int SCR_HEIGHT = 1000;
 
 // Paramaters for number and size of tiles
-const unsigned int num_tiles_x     = 37;
-const unsigned int num_tiles_y     = 37;
-const float tile_gap               = 0.0f;
-const float tile_depth_width_ratio = 0.0f;
+const unsigned int num_tiles_x     = 5;
+const unsigned int num_tiles_y     = 5;
+const float tile_gap               = 0.01f;
+const float tile_depth_width_ratio = 0.2f;
 
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
@@ -213,6 +213,7 @@ int main()
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist2(0,1);
     std::uniform_int_distribution<std::mt19937::result_type> dist4(0,3);
+    std::uniform_int_distribution<std::mt19937::result_type> dist100(0,100);
 
     int i, j;
     float x, y;
@@ -231,10 +232,12 @@ int main()
             tiles[i][j].target_rotation.x = 0.0f;//180.0f*dist2(rng);
             tiles[i][j].target_rotation.y = 0.0f;//180.0f*dist2(rng);
 
-            tiles[i][j].colour_a = glm::vec3(0.0f, 0.0f, 0.0f);
+            tiles[i][j].colour_a = glm::vec3(1.0f, 0.005f*dist100(rng), 0.005f*dist100(rng));
             tiles[i][j].colour_b = glm::vec3(1.0f, 1.0f, 1.0f);
         }
     }
+
+    double mouse_x, mouse_y;
 
     // render loop
     // -----------
@@ -246,6 +249,9 @@ int main()
     float z_step = 0.005f;
     int player_x = num_tiles_x / 2;
     int player_y = num_tiles_y / 2;
+
+    int player_x_new;
+    int player_y_new;
 
     int dx, dy = 0;
 
@@ -295,9 +301,9 @@ int main()
                 }
 
                 angle = 0.000001f * double(clock()-begin);
-                tiles[i][j].colour_a.x = blue;
-                tiles[i][j].colour_a.y = 0.0f;
-                tiles[i][j].colour_a.z = 0.0f;
+                //tiles[i][j].colour_a.x = blue;
+                //tiles[i][j].colour_a.y = 0.0f;
+                //tiles[i][j].colour_a.z = 0.0f;
 
                 trans = glm::mat4(1.0f);
                 trans = glm::translate(trans, tiles[i][j].position);
@@ -329,20 +335,33 @@ int main()
 
         if (clock() - accumilator > time_step) {
             accumilator += time_step;
-            dx = dy = 0;
-            if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-                dy += 1;
-            }
-            if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-                dy -= 1;
-            }
-            if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-                dx += 1;
-            }
-            if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-                dx -= 1;
+
+            glfwGetCursorPos(window, &mouse_x, &mouse_y);
+            mouse_x = 2 * mouse_x / SCR_WIDTH - 1;
+            mouse_y = 2 * mouse_y / SCR_HEIGHT - 1;
+
+            /// Mouse transformation goes in here. 
+
+            if (fabs(mouse_x) < 1 && fabs(mouse_y) < 1) {
+                player_x_new = int(num_tiles_x * (mouse_x + 1.0f) / 2.0f);
+                player_y_new = int(num_tiles_y * (1.0f - mouse_y) / 2.0f);
             }
 
+            if (player_x_new > player_x) {
+                tiles[player_x][player_y].target_rotation.x += 180.0f;
+            } else if (player_x_new < player_x) {
+                tiles[player_x][player_y].target_rotation.x -= 180.0f;
+            }
+
+            if (player_y_new > player_y) {
+                tiles[player_x][player_y].target_rotation.y += 180.0f;
+            } else if (player_y_new < player_y) {
+                tiles[player_x][player_y].target_rotation.y -= 180.0f;
+            }
+
+            player_x = player_x_new;
+            player_y = player_y_new;
+            /*
             if (dx == 1) {
                 tiles[player_x][player_y].target_rotation.x += 180.0f;
                 player_x++;
@@ -369,6 +388,7 @@ int main()
                     player_y = num_tiles_y-1;
                 }
             }
+            */
         }
 
  
