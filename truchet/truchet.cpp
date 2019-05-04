@@ -25,6 +25,12 @@ struct tile {
 const unsigned int SCR_WIDTH = 1000;
 const unsigned int SCR_HEIGHT = 1000;
 
+// Paramaters for number and size of tiles
+const unsigned int num_tiles_x     = 37;
+const unsigned int num_tiles_y     = 37;
+const float tile_gap               = 0.0f;
+const float tile_depth_width_ratio = 0.0f;
+
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
     "uniform mat4 model;\n"
@@ -130,8 +136,8 @@ int main()
      *            2-------3
      */
 
-    float tile_width = 0.115f;
-    float tile_depth = 0.01f;
+    float tile_width = 2.0f/std::max(num_tiles_x, num_tiles_y) - tile_gap;
+    float tile_depth = tile_width * tile_depth_width_ratio;
     float tile_vertices[] = {
         -tile_width / 2.0f, +tile_width / 2.0f, +tile_depth / 2.0f,
         +tile_width / 2.0f, +tile_width / 2.0f, +tile_depth / 2.0f,
@@ -208,23 +214,22 @@ int main()
     std::uniform_int_distribution<std::mt19937::result_type> dist2(0,1);
     std::uniform_int_distribution<std::mt19937::result_type> dist4(0,3);
 
-    int num_tiles_x = 16;
-    int num_tiles_y = 16;
     int i, j;
     float x, y;
+    float tile_space = tile_width + tile_gap;
     struct tile **tiles = (struct tile **)malloc(num_tiles_x * sizeof(struct tile*));
     for (i=0; i<num_tiles_x; i++) {
         tiles[i] = (struct tile *)malloc(num_tiles_y * sizeof(struct tile));
         for (j=0; j<num_tiles_y;j++) {
-            tiles[i][j].position.x = 2.0f/num_tiles_x*(i-(num_tiles_x-1)/2.0f);
-            tiles[i][j].position.y = 2.0f/num_tiles_y*(j-(num_tiles_y-1)/2.0f);
+            tiles[i][j].position.x = tile_space * (i - (num_tiles_x-1)/2.0f);
+            tiles[i][j].position.y = tile_space * (j - (num_tiles_y-1)/2.0f);
             tiles[i][j].position.z = 0.0f;
 
-            tiles[i][j].rotation.x = 180.0f*dist2(rng);
-            tiles[i][j].rotation.y = 180.0f*dist2(rng);
+            tiles[i][j].rotation.x = 0.0f;
+            tiles[i][j].rotation.y = 0.0f;
 
-            tiles[i][j].target_rotation.x = tiles[i][j].rotation.x;
-            tiles[i][j].target_rotation.y = tiles[i][j].rotation.y;
+            tiles[i][j].target_rotation.x = 0.0f;//180.0f*dist2(rng);
+            tiles[i][j].target_rotation.y = 0.0f;//180.0f*dist2(rng);
 
             tiles[i][j].colour_a = glm::vec3(0.0f, 0.0f, 0.0f);
             tiles[i][j].colour_b = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -239,7 +244,8 @@ int main()
     int time_step = 30000;
     float angle_step = 5.f;
     float z_step = 0.005f;
-    int player_x, player_y = 10;
+    int player_x = num_tiles_x / 2;
+    int player_y = num_tiles_y / 2;
 
     int dx, dy = 0;
 
