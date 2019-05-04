@@ -17,8 +17,9 @@ struct tile {
     glm::vec3 position;
     glm::vec2 rotation;
     glm::vec2 target_rotation;
-    glm::vec3 colour_a;
-    glm::vec3 colour_b;
+    glm::vec3 colour_on;
+    glm::vec3 colour_off;
+    glm::vec3 colour_edge;
 };
 
 // settings
@@ -148,13 +149,15 @@ int main()
         -tile_width / 2.0f, -tile_width / 2.0f, -tile_depth / 2.0f,
         +tile_width / 2.0f, -tile_width / 2.0f, -tile_depth / 2.0f,
     };
-    unsigned int tile_colour_indicies[] = {
+    unsigned int tile_on_indicies[] = {
         0, 1, 2, // Front triangle
         4, 5, 6  // Rear triangle
     };
-    unsigned int tile_blank_indicies[] = {
-        1, 3, 2, // Front blank
-        5, 7, 6, // Rear blank
+    unsigned int tile_off_indicies[] = {
+        1, 3, 2,
+        5, 7, 6 
+    };
+    unsigned int tile_edge_indicies[] = {
         0, 1, 4,
         1, 3, 5,
         3, 2, 7,
@@ -165,35 +168,47 @@ int main()
         6, 4, 0 
     };
     
-    unsigned int VAO_tile_blank, VAO_tile_colour;
-    unsigned int EBO_tile_blank, EBO_tile_colour;
+    unsigned int VAO_tile_on, VAO_tile_off, VAO_tile_edge;
+    unsigned int EBO_tile_on, EBO_tile_off, EBO_tile_edge;
     unsigned int VBO_tile;
-    glGenVertexArrays(1, &VAO_tile_blank);
-    glGenVertexArrays(1, &VAO_tile_colour);
-    glGenBuffers(1, &EBO_tile_blank);
-    glGenBuffers(1, &EBO_tile_colour);
+    glGenVertexArrays(1, &VAO_tile_on);
+    glGenVertexArrays(1, &VAO_tile_off);
+    glGenVertexArrays(1, &VAO_tile_edge);
+    glGenBuffers(1, &EBO_tile_on);
+    glGenBuffers(1, &EBO_tile_off);
+    glGenBuffers(1, &EBO_tile_edge);
     glGenBuffers(1, &VBO_tile);
 
-
-    glBindVertexArray(VAO_tile_blank);
+    glBindVertexArray(VAO_tile_on);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO_tile);
     glBufferData(GL_ARRAY_BUFFER, sizeof(tile_vertices), tile_vertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tile_blank);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(tile_blank_indicies), tile_blank_indicies, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tile_on);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(tile_on_indicies), tile_on_indicies, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
 
-    glBindVertexArray(VAO_tile_colour);
+    glBindVertexArray(VAO_tile_off);
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO_tile);
     glBufferData(GL_ARRAY_BUFFER, sizeof(tile_vertices), tile_vertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tile_colour);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(tile_colour_indicies), tile_colour_indicies, GL_STATIC_DRAW);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tile_off);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(tile_off_indicies), tile_off_indicies, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glBindVertexArray(VAO_tile_edge);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_tile);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tile_vertices), tile_vertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO_tile_edge);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(tile_edge_indicies), tile_edge_indicies, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -232,8 +247,9 @@ int main()
             tiles[i][j].target_rotation.x = 0.0f;//180.0f*dist2(rng);
             tiles[i][j].target_rotation.y = 0.0f;//180.0f*dist2(rng);
 
-            tiles[i][j].colour_a = glm::vec3(1.0f, 0.005f*dist100(rng), 0.005f*dist100(rng));
-            tiles[i][j].colour_b = glm::vec3(1.0f, 1.0f, 1.0f);
+            tiles[i][j].colour_on = glm::vec3(1.0f, 0.005f*dist100(rng), 0.005f*dist100(rng));
+            tiles[i][j].colour_off = glm::vec3(1.0f, 1.0f, 1.0f);
+            tiles[i][j].colour_edge = glm::vec3(0.8f, 0.8f, 0.8f);
         }
     }
 
@@ -317,16 +333,20 @@ int main()
                 glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
                 glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-                glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_b.x, tiles[i][j].colour_b.y, tiles[i][j].colour_b.z);
-                glBindVertexArray(VAO_tile_blank);
-                glDrawElements(GL_TRIANGLES, 30, GL_UNSIGNED_INT, 0);
+                glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_edge.x, tiles[i][j].colour_edge.y, tiles[i][j].colour_edge.z);
+                glBindVertexArray(VAO_tile_edge);
+                glDrawElements(GL_TRIANGLES, 24, GL_UNSIGNED_INT, 0);
+
+                glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_off.x, tiles[i][j].colour_off.y, tiles[i][j].colour_off.z);
+                glBindVertexArray(VAO_tile_off);
+                glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
                 if (i == player_x && j == player_y) {
                     glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 0.0f, blue, 0.0f);
                 } else {
-                    glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_a.x, tiles[i][j].colour_a.y, tiles[i][j].colour_a.z);
+                    glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_on.x, tiles[i][j].colour_on.y, tiles[i][j].colour_on.z);
                 }
-                glBindVertexArray(VAO_tile_colour);
+                glBindVertexArray(VAO_tile_on);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
  
                 glBindVertexArray(0);
@@ -400,8 +420,9 @@ int main()
 
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
-    glDeleteVertexArrays(1, &VAO_tile_blank);
-    glDeleteVertexArrays(1, &VAO_tile_colour);
+    glDeleteVertexArrays(1, &VAO_tile_on);
+    glDeleteVertexArrays(1, &VAO_tile_off);
+    glDeleteVertexArrays(1, &VAO_tile_edge);
     glDeleteBuffers(1, &VBO_tile);
 
     // glfw: terminate, clearing all previously allocated GLFW resources.
