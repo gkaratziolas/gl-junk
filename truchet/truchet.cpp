@@ -22,12 +22,12 @@ struct tile {
 };
 
 // settings
-const unsigned int SCR_WIDTH = 1000;
+const unsigned int SCR_WIDTH  = 1000;
 const unsigned int SCR_HEIGHT = 1000;
 
 // Paramaters for number and size of tiles
-const unsigned int num_tiles_x     = 5;
-const unsigned int num_tiles_y     = 5;
+const unsigned int num_tiles_x     = 15;
+const unsigned int num_tiles_y     = 15;
 const float tile_gap               = 0.01f;
 const float tile_depth_width_ratio = 0.2f;
 
@@ -244,7 +244,7 @@ int main()
     float blue = 0.f;
     clock_t begin = clock();
     clock_t accumilator = clock();
-    int time_step = 30000;
+    int time_step = 3000;
     float angle_step = 5.f;
     float z_step = 0.005f;
     int player_x = num_tiles_x / 2;
