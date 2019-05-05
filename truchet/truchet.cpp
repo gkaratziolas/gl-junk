@@ -23,8 +23,8 @@ struct tile {
 };
 
 // settings
-const unsigned int SCR_WIDTH  = 1000;
-const unsigned int SCR_HEIGHT = 1000;
+const unsigned int SCR_WIDTH  = 1300;
+const unsigned int SCR_HEIGHT = 1300;
 
 // Paramaters for number and size of tiles
 const unsigned int num_tiles_x     = 15;
@@ -73,6 +73,7 @@ int main()
     }
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 
     // glad: load all OpenGL function pointers
     // ---------------------------------------
@@ -263,8 +264,8 @@ int main()
     int time_step = 3000;
     float angle_step = 5.f;
     float z_step = 0.005f;
-    int player_x = num_tiles_x / 2;
-    int player_y = num_tiles_y / 2;
+    int player_x = -1;
+    int player_y = -1;
 
     int player_x_new;
     int player_y_new;
@@ -365,15 +366,18 @@ int main()
             if (fabs(mouse_x) < 1 && fabs(mouse_y) < 1) {
                 player_x_new = int(num_tiles_x * (mouse_x + 1.0f) / 2.0f);
                 player_y_new = int(num_tiles_y * (1.0f - mouse_y) / 2.0f);
+            } else {
+                player_x_new = -1;
+                player_y_new = -1;
             }
 
-            if (player_x_new > player_x) {
+            if ((player_x_new > player_x) && player_x != -1) {
                 tiles[player_x][player_y].target_rotation.x += 180.0f;
             } else if (player_x_new < player_x) {
                 tiles[player_x][player_y].target_rotation.x -= 180.0f;
             }
 
-            if (player_y_new > player_y) {
+            if ((player_y_new > player_y) && player_y != -1) {
                 tiles[player_x][player_y].target_rotation.y += 180.0f;
             } else if (player_y_new < player_y) {
                 tiles[player_x][player_y].target_rotation.y -= 180.0f;
