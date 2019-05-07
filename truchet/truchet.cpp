@@ -245,8 +245,8 @@ int main()
             tiles[i][j].rotation.x = 0.0f;
             tiles[i][j].rotation.y = 0.0f;
 
-            tiles[i][j].target_rotation.x = 0.0f;//180.0f*dist2(rng);
-            tiles[i][j].target_rotation.y = 0.0f;//180.0f*dist2(rng);
+            tiles[i][j].target_rotation.x = 0.0f;
+            tiles[i][j].target_rotation.y = 0.0f;
 
             tiles[i][j].colour_on = glm::vec3(1.0f, 0.005f*dist100(rng), 0.005f*dist100(rng));
             tiles[i][j].colour_off = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -318,9 +318,6 @@ int main()
                 }
 
                 angle = 0.000001f * double(clock()-begin);
-                //tiles[i][j].colour_a.x = blue;
-                //tiles[i][j].colour_a.y = 0.0f;
-                //tiles[i][j].colour_a.z = 0.0f;
 
                 trans = glm::mat4(1.0f);
                 trans = glm::translate(trans, tiles[i][j].position);
@@ -385,34 +382,6 @@ int main()
 
             player_x = player_x_new;
             player_y = player_y_new;
-            /*
-            if (dx == 1) {
-                tiles[player_x][player_y].target_rotation.x += 180.0f;
-                player_x++;
-                if (player_x==num_tiles_x) {
-                    player_x = 0;
-                }
-            } else if (dx == -1) {
-                tiles[player_x][player_y].target_rotation.x -= 180.0f;
-                player_x--;
-                if (player_x < 0) {
-                    player_x = num_tiles_x-1;
-                }
-            }
-            if (dy == 1) {
-                tiles[player_x][player_y].target_rotation.y += 180.0f;
-                player_y++;
-                if (player_y==num_tiles_y) {
-                    player_y = 0;
-                }
-            } else if (dy == -1) {
-                tiles[player_x][player_y].target_rotation.y -= 180.0f;
-                player_y--;
-                if (player_y < 0) {
-                    player_y = num_tiles_y-1;
-                }
-            }
-            */
         }
 
  
@@ -456,4 +425,3 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
-
