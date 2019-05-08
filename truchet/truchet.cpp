@@ -27,9 +27,9 @@ const unsigned int SCR_WIDTH  = 1300;
 const unsigned int SCR_HEIGHT = 1300;
 
 // Paramaters for number and size of tiles
-const unsigned int num_tiles_x     = 15;
-const unsigned int num_tiles_y     = 15;
-const float tile_gap               = 0.01f;
+const unsigned int num_tiles_x     = 20;
+const unsigned int num_tiles_y     = 20;
+const float tile_gap_width_ratio   = 0.2f;
 const float tile_depth_width_ratio = 0.2f;
 
 const char *vertexShaderSource = "#version 330 core\n"
@@ -138,7 +138,7 @@ int main()
      *            2-------3
      */
 
-    float tile_width = 2.0f/std::max(num_tiles_x, num_tiles_y) - tile_gap;
+    float tile_width = 2.0f / (std::max(num_tiles_x, num_tiles_y) * (1.0f + tile_gap_width_ratio));
     float tile_depth = tile_width * tile_depth_width_ratio;
     float tile_vertices[] = {
         -tile_width / 2.0f, +tile_width / 2.0f, +tile_depth / 2.0f,
@@ -233,7 +233,7 @@ int main()
 
     int i, j;
     float x, y;
-    float tile_space = tile_width + tile_gap;
+    float tile_space = tile_width * (1.0f + tile_gap_width_ratio);
     struct tile **tiles = (struct tile **)malloc(num_tiles_x * sizeof(struct tile*));
     for (i=0; i<num_tiles_x; i++) {
         tiles[i] = (struct tile *)malloc(num_tiles_y * sizeof(struct tile));
@@ -262,7 +262,7 @@ int main()
     clock_t begin = clock();
     clock_t accumilator = clock();
     int time_step = 3000;
-    float angle_step = 5.f;
+    float angle_step = 1.f;
     float z_step = 0.005f;
     int player_x = -1;
     int player_y = -1;
