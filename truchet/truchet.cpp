@@ -23,14 +23,14 @@ struct tile {
 };
 
 // settings
-const unsigned int SCR_WIDTH  = 1300;
-const unsigned int SCR_HEIGHT = 1300;
+const unsigned int SCR_WIDTH  = 1000;
+const unsigned int SCR_HEIGHT = 1000;
 
 // Paramaters for number and size of tiles
-const unsigned int num_tiles_x     = 20;
-const unsigned int num_tiles_y     = 20;
-const float tile_gap_width_ratio   = 0.2f;
-const float tile_depth_width_ratio = 0.2f;
+const unsigned int num_tiles_x     = 10;
+const unsigned int num_tiles_y     = 10;
+const float tile_gap_width_ratio   = 0.1f;
+const float tile_depth_width_ratio = 0.1f;
 
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
@@ -228,6 +228,7 @@ int main()
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist2(0,1);
+    std::uniform_int_distribution<std::mt19937::result_type> dist3(0,2);
     std::uniform_int_distribution<std::mt19937::result_type> dist4(0,3);
     std::uniform_int_distribution<std::mt19937::result_type> dist100(0,100);
 
@@ -242,11 +243,15 @@ int main()
             tiles[i][j].position.y = tile_space * (j - (num_tiles_y-1)/2.0f);
             tiles[i][j].position.z = 0.0f;
 
+#ifdef RANDOMISE_TILES
+            tiles[i][j].rotation.x = 180.0f * dist2(rng);
+            tiles[i][j].rotation.y = 180.0f * dist2(rng);
+#else
             tiles[i][j].rotation.x = 0.0f;
             tiles[i][j].rotation.y = 0.0f;
-
-            tiles[i][j].target_rotation.x = 0.0f;
-            tiles[i][j].target_rotation.y = 0.0f;
+#endif
+            tiles[i][j].target_rotation.x = tiles[i][j].rotation.x;
+            tiles[i][j].target_rotation.y = tiles[i][j].rotation.y;
 
             tiles[i][j].colour_on = glm::vec3(1.0f, 0.005f*dist100(rng), 0.005f*dist100(rng));
             tiles[i][j].colour_off = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -262,7 +267,7 @@ int main()
     clock_t begin = clock();
     clock_t accumilator = clock();
     int time_step = 3000;
-    float angle_step = 1.f;
+    float angle_step = 2.f;
     float z_step = 0.005f;
     int player_x = -1;
     int player_y = -1;
@@ -282,7 +287,7 @@ int main()
 
         // render
         // ------
-        glClearColor(0.2f, 0.2f, blue, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         int i, j;
