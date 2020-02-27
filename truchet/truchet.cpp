@@ -32,6 +32,11 @@ const unsigned int num_tiles_y     = 12;
 const float tile_gap_width_ratio   = 0.0f;
 const float tile_depth_width_ratio = 0.1f;
 
+// global state
+bool zero_pressed     = 0;
+bool zero_was_pressed = 0;
+bool colour_full      = 1;
+
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
     "uniform mat4 model;\n"
@@ -268,7 +273,7 @@ int main()
     clock_t begin = clock();
     clock_t accumilator = clock();
     int time_step = 3000;
-    float angle_step = 2.f;
+    float angle_step = 4.f;
     float z_step = 0.005f;
     int player_x = -1;
     int player_y = -1;
@@ -284,6 +289,17 @@ int main()
         // input
         // -----
         processInput(window);
+
+        if (zero_pressed && !zero_was_pressed) {
+            for (i=0; i<num_tiles_x; i++) {
+                for (j=0; j<num_tiles_y; j++) {
+                        tiles[i][j].target_rotation.x += 180.0f * dist2(rng);
+                        tiles[i][j].target_rotation.y += 180.0f * dist2(rng);
+                }
+            }
+            zero_was_pressed = 1;
+        }
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // render
@@ -348,7 +364,11 @@ int main()
                 if (i == player_x && j == player_y) {
                     glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 0.0f, blue, 0.0f);
                 } else {
-                    glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_on.x, tiles[i][j].colour_on.y, tiles[i][j].colour_on.z);
+                    if (colour_full) {
+                        glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_on.x, tiles[i][j].colour_on.y, tiles[i][j].colour_on.z);
+                    } else {
+                        glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 0.0f, 0.0f, 0.0f);
+                    }
                 }
                 glBindVertexArray(VAO_tile_on);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -420,6 +440,15 @@ void processInput(GLFWwindow *window)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     } else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    } else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+        colour_full = 1;
+    } else if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
+        colour_full = 0;
+    } else if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) {
+        zero_pressed = 1;
+    } else {
+        zero_pressed = 0;
+        zero_was_pressed = 0;
     }
 }
 
