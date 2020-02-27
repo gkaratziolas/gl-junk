@@ -23,14 +23,19 @@ struct tile {
 };
 
 // settings
-const unsigned int SCR_WIDTH  = 1300;
-const unsigned int SCR_HEIGHT = 1300;
+const unsigned int SCR_WIDTH  = 1000;
+const unsigned int SCR_HEIGHT = 1000;
 
 // Paramaters for number and size of tiles
-const unsigned int num_tiles_x     = 20;
-const unsigned int num_tiles_y     = 20;
-const float tile_gap_width_ratio   = 0.2f;
-const float tile_depth_width_ratio = 0.2f;
+const unsigned int num_tiles_x     = 12;
+const unsigned int num_tiles_y     = 12;
+const float tile_gap_width_ratio   = 0.0f;
+const float tile_depth_width_ratio = 0.1f;
+
+// global state
+bool zero_pressed     = 0;
+bool zero_was_pressed = 0;
+bool colour_full      = 1;
 
 const char *vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
@@ -222,12 +227,13 @@ int main()
     glm::mat4 projection = glm::mat4(1.0f);
     glm::mat4 view       = glm::mat4(1.0f);
 
-    projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(40.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
     std::random_device dev;
     std::mt19937 rng(dev());
     std::uniform_int_distribution<std::mt19937::result_type> dist2(0,1);
+    std::uniform_int_distribution<std::mt19937::result_type> dist3(0,2);
     std::uniform_int_distribution<std::mt19937::result_type> dist4(0,3);
     std::uniform_int_distribution<std::mt19937::result_type> dist100(0,100);
 
@@ -245,8 +251,13 @@ int main()
             tiles[i][j].rotation.x = 0.0f;
             tiles[i][j].rotation.y = 0.0f;
 
+#ifdef RANDOMISE_TILES
+            tiles[i][j].target_rotation.x = 180.0f * dist2(rng);
+            tiles[i][j].target_rotation.y = 180.0f * dist2(rng);
+#else
             tiles[i][j].target_rotation.x = 0.0f;
             tiles[i][j].target_rotation.y = 0.0f;
+#endif
 
             tiles[i][j].colour_on = glm::vec3(1.0f, 0.005f*dist100(rng), 0.005f*dist100(rng));
             tiles[i][j].colour_off = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -262,7 +273,7 @@ int main()
     clock_t begin = clock();
     clock_t accumilator = clock();
     int time_step = 3000;
-    float angle_step = 1.f;
+    float angle_step = 4.f;
     float z_step = 0.005f;
     int player_x = -1;
     int player_y = -1;
@@ -278,11 +289,22 @@ int main()
         // input
         // -----
         processInput(window);
+
+        if (zero_pressed && !zero_was_pressed) {
+            for (i=0; i<num_tiles_x; i++) {
+                for (j=0; j<num_tiles_y; j++) {
+                        tiles[i][j].target_rotation.x += 180.0f * dist2(rng);
+                        tiles[i][j].target_rotation.y += 180.0f * dist2(rng);
+                }
+            }
+            zero_was_pressed = 1;
+        }
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // render
         // ------
-        glClearColor(0.2f, 0.2f, blue, 1.0f);
+        glClearColor(0.0f, 0.0f, 0.2f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         int i, j;
@@ -342,7 +364,11 @@ int main()
                 if (i == player_x && j == player_y) {
                     glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 0.0f, blue, 0.0f);
                 } else {
-                    glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_on.x, tiles[i][j].colour_on.y, tiles[i][j].colour_on.z);
+                    if (colour_full) {
+                        glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), tiles[i][j].colour_on.x, tiles[i][j].colour_on.y, tiles[i][j].colour_on.z);
+                    } else {
+                        glUniform3f(glGetUniformLocation(shaderProgram, "uColour"), 0.0f, 0.0f, 0.0f);
+                    }
                 }
                 glBindVertexArray(VAO_tile_on);
                 glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -414,6 +440,15 @@ void processInput(GLFWwindow *window)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     } else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
         glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    } else if (glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+        colour_full = 1;
+    } else if (glfwGetKey(window, GLFW_KEY_4) == GLFW_PRESS) {
+        colour_full = 0;
+    } else if (glfwGetKey(window, GLFW_KEY_0) == GLFW_PRESS) {
+        zero_pressed = 1;
+    } else {
+        zero_pressed = 0;
+        zero_was_pressed = 0;
     }
 }
 
