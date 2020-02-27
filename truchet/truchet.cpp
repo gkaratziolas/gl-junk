@@ -27,9 +27,9 @@ const unsigned int SCR_WIDTH  = 1000;
 const unsigned int SCR_HEIGHT = 1000;
 
 // Paramaters for number and size of tiles
-const unsigned int num_tiles_x     = 10;
-const unsigned int num_tiles_y     = 10;
-const float tile_gap_width_ratio   = 0.1f;
+const unsigned int num_tiles_x     = 12;
+const unsigned int num_tiles_y     = 12;
+const float tile_gap_width_ratio   = 0.0f;
 const float tile_depth_width_ratio = 0.1f;
 
 const char *vertexShaderSource = "#version 330 core\n"
@@ -222,7 +222,7 @@ int main()
     glm::mat4 projection = glm::mat4(1.0f);
     glm::mat4 view       = glm::mat4(1.0f);
 
-    projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    projection = glm::perspective(glm::radians(40.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     view       = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
     std::random_device dev;
@@ -243,15 +243,16 @@ int main()
             tiles[i][j].position.y = tile_space * (j - (num_tiles_y-1)/2.0f);
             tiles[i][j].position.z = 0.0f;
 
-#ifdef RANDOMISE_TILES
-            tiles[i][j].rotation.x = 180.0f * dist2(rng);
-            tiles[i][j].rotation.y = 180.0f * dist2(rng);
-#else
             tiles[i][j].rotation.x = 0.0f;
             tiles[i][j].rotation.y = 0.0f;
+
+#ifdef RANDOMISE_TILES
+            tiles[i][j].target_rotation.x = 180.0f * dist2(rng);
+            tiles[i][j].target_rotation.y = 180.0f * dist2(rng);
+#else
+            tiles[i][j].target_rotation.x = 0.0f;
+            tiles[i][j].target_rotation.y = 0.0f;
 #endif
-            tiles[i][j].target_rotation.x = tiles[i][j].rotation.x;
-            tiles[i][j].target_rotation.y = tiles[i][j].rotation.y;
 
             tiles[i][j].colour_on = glm::vec3(1.0f, 0.005f*dist100(rng), 0.005f*dist100(rng));
             tiles[i][j].colour_off = glm::vec3(1.0f, 1.0f, 1.0f);
