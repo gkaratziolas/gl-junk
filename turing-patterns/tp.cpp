@@ -21,8 +21,10 @@ const unsigned int SCR_HEIGHT = 1000;
 
 int render_mode = 0;
 
-#define WORLD_WIDTH   100
-#define WORLD_HEIGHT  100
+#define WORLD_WIDTH   500
+#define WORLD_HEIGHT  500
+
+#define PI 3.141279f
 
 float newA[WORLD_HEIGHT][WORLD_WIDTH];
 float newB[WORLD_HEIGHT][WORLD_WIDTH];
@@ -30,11 +32,11 @@ float oldA[WORLD_HEIGHT][WORLD_WIDTH];
 float oldB[WORLD_HEIGHT][WORLD_WIDTH];
 
 float dx    = 1;
-float dt    = 0.00005;
+float dt    = 0.0005;
 float Da    = 1;
 float Db    = 100;
-float alpha = -0.005;
-float beta  = 10;
+float alpha = 0.01;
+float beta  = 1;
 
 void update_reaction() {
     //std::swap(newA, oldA);
@@ -224,11 +226,25 @@ int main()
         ourShader.use();
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+
+        float R = WORLD_HEIGHT/3;
+        float r = 6;
+        float x0 = R * cos(count * PI/180) + WORLD_WIDTH / 2;
+        float y0 = R * sin(count * PI/180) + WORLD_HEIGHT / 2;
+        for (int y=0; y<WORLD_HEIGHT; y++) {
+            for (int x=0; x<WORLD_WIDTH; x++) {
+                if (((x-x0)*(x-x0) + (y-y0)*(y-y0)) <= r*r) {
+                    newA[y][x] = 1.0f;
+                    newB[y][x] = 0.5f;
+                }
+            }
+        }
         
         for (int i=0; i<200; i++) {
             update_reaction();
-            count += 1;
         }
+        count += 1;
 
         if (render_mode == 0) {
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RED, GL_FLOAT, newA);
