@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 out vec4 FragColor;
 
 in vec2 TexCoord;
@@ -44,6 +44,6 @@ vec4 constant_sum_colour(float x)
 
 void main()
 {
-	float intensity = texture(texture1, TexCoord).x;
-	FragColor = constant_sum_colour(intensity);
+	//float intensity = texture(texture1, TexCoord).x;
+	FragColor = texture(texture1, TexCoord); //constant_sum_colour(intensity);
 }

@@ -114,7 +114,7 @@ int main()
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
@@ -190,6 +190,7 @@ int main()
     // -------------------------
     unsigned int texture;
     glGenTextures(1, &texture);
+    glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
     // set the texture wrapping parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   // set texture wrapping to GL_REPEAT (default wrapping method)
@@ -199,7 +200,48 @@ int main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RED, GL_FLOAT, newA);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
+
+    glBindImageTexture(0, texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+
+
+    std::string       compute_shader_code;
+    std::string       compute_shader_path = "turing.cs";
+    std::ifstream     compute_shader_file;
+    std::stringstream compute_shader_stream;
+    char infoLog[512];
+
+    // open files
+    compute_shader_file.open(compute_shader_path);
+    // read file's buffer contents into streams
+    compute_shader_stream << compute_shader_file.rdbuf();
+    // close file handlers
+    compute_shader_file.close();
+    // convert stream into string
+    compute_shader_code = compute_shader_stream.str();         
+    const char* compute_shader_code_c = compute_shader_code.c_str();
+    unsigned int compute = glCreateShader(GL_COMPUTE_SHADER);
+    glShaderSource(compute, 1, &compute_shader_code_c, NULL);
+    glCompileShader(compute);
+    int success;
+    glGetShaderiv(compute, GL_COMPILE_STATUS, &success);
+    if(!success)
+    {
+        glGetShaderInfoLog(compute, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+        return false;
+    };
+    unsigned int gComputeProgram = glCreateProgram();
+    glAttachShader(gComputeProgram, compute);
+    glLinkProgram(compute);
+    glGetProgramiv(gComputeProgram, GL_LINK_STATUS, &success);
+    if(!success)
+    {
+        glGetProgramInfoLog(gComputeProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+        return false;
+    }
 
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
@@ -217,6 +259,15 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        { // launch compute shaders!
+            glUseProgram(compute);
+            glDispatchCompute((GLuint)WORLD_WIDTH, (GLuint)WORLD_HEIGHT, 1);
+            count++;
+        }
+
+        // make sure writing to image has finished before read
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
         // render
         // ------
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -226,31 +277,14 @@ int main()
         ourShader.use();
         glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
 
-
-        float R = WORLD_HEIGHT/3;
-        float r = 6;
-        float x0 = R * cos(count * PI/180) + WORLD_WIDTH / 2;
-        float y0 = R * sin(count * PI/180) + WORLD_HEIGHT / 2;
-        for (int y=0; y<WORLD_HEIGHT; y++) {
-            for (int x=0; x<WORLD_WIDTH; x++) {
-                if (((x-x0)*(x-x0) + (y-y0)*(y-y0)) <= r*r) {
-                    newA[y][x] = 1.0f;
-                    newB[y][x] = 0.5f;
-                }
-            }
-        }
-        
-        for (int i=0; i<200; i++) {
-            update_reaction();
-        }
-        count += 1;
-
-        if (render_mode == 0) {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RED, GL_FLOAT, newA);
-        } else {
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RED, GL_FLOAT, newB);
-        }
+        //if (render_mode == 0) {
+        //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RED, GL_FLOAT, newA);
+        //} else {
+        //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RED, GL_FLOAT, newB);
+        //}
         std::cout << count << std::endl;
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
