@@ -1,9 +1,9 @@
 Determining if the include file pthread.h exists failed with the following output:
 Change Dir: C:/Users/meisg/source/repos/gl-junk/lib/glfw-3.3.2/out/build/x64-Debug/CMakeFiles/CMakeTmp
 
-Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_36662 && [1/2] Building C object CMakeFiles\cmTC_36662.dir\CheckIncludeFile.c.obj
-FAILED: CMakeFiles/cmTC_36662.dir/CheckIncludeFile.c.obj 
-C:\PROGRA~2\MICROS~2\2019\COMMUN~1\VC\Tools\MSVC\1424~1.283\bin\HostX64\x64\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\cmTC_36662.dir\CheckIncludeFile.c.obj /FdCMakeFiles\cmTC_36662.dir\ /FS -c CheckIncludeFile.c
+Run Build Command(s):C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/Common7/IDE/CommonExtensions/Microsoft/CMake/Ninja/ninja.exe cmTC_f73fb && [1/2] Building C object CMakeFiles\cmTC_f73fb.dir\CheckIncludeFile.c.obj
+FAILED: CMakeFiles/cmTC_f73fb.dir/CheckIncludeFile.c.obj 
+C:\PROGRA~2\MICROS~2\2019\COMMUN~1\VC\Tools\MSVC\1425~1.286\bin\HostX64\x64\cl.exe  /nologo   /DWIN32 /D_WINDOWS /W3  /MDd /Zi /Ob0 /Od /RTC1 /showIncludes /FoCMakeFiles\cmTC_f73fb.dir\CheckIncludeFile.c.obj /FdCMakeFiles\cmTC_f73fb.dir\ /FS -c CheckIncludeFile.c
 CheckIncludeFile.c(1): fatal error C1083: Cannot open include file: 'pthread.h': No such file or directory
 ninja: build stopped: subcommand failed.
 
