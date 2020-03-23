@@ -109,11 +109,15 @@ void update_reaction() {
     return;
 }
 
+GLuint loadComputeShader(std::string computeShaderPath);
+GLuint genComputeProg();
+
 int main()
 {
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
+    glfwDefaultWindowHints();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -142,6 +146,9 @@ int main()
 
     // build and compile our shader zprogram
     // ------------------------------------
+    GLuint gComputeProgram = loadComputeShader("turing.cs");
+    if (gComputeProgram == false)
+        return -1;
     Shader ourShader("texture.vs", "texture.fs"); 
 
     glEnable(GL_DEPTH_TEST);
@@ -204,45 +211,6 @@ int main()
 
     glBindImageTexture(0, texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-
-
-    std::string       compute_shader_code;
-    std::string       compute_shader_path = "turing.cs";
-    std::ifstream     compute_shader_file;
-    std::stringstream compute_shader_stream;
-    char infoLog[512];
-
-    // open files
-    compute_shader_file.open(compute_shader_path);
-    // read file's buffer contents into streams
-    compute_shader_stream << compute_shader_file.rdbuf();
-    // close file handlers
-    compute_shader_file.close();
-    // convert stream into string
-    compute_shader_code = compute_shader_stream.str();         
-    const char* compute_shader_code_c = compute_shader_code.c_str();
-    unsigned int compute = glCreateShader(GL_COMPUTE_SHADER);
-    glShaderSource(compute, 1, &compute_shader_code_c, NULL);
-    glCompileShader(compute);
-    int success;
-    glGetShaderiv(compute, GL_COMPILE_STATUS, &success);
-    if(!success)
-    {
-        glGetShaderInfoLog(compute, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-        return false;
-    };
-    unsigned int gComputeProgram = glCreateProgram();
-    glAttachShader(gComputeProgram, compute);
-    glLinkProgram(compute);
-    glGetProgramiv(gComputeProgram, GL_LINK_STATUS, &success);
-    if(!success)
-    {
-        glGetProgramInfoLog(gComputeProgram, 512, NULL, infoLog);
-        std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-        return false;
-    }
-
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
     glBindVertexArray(0); 
@@ -260,7 +228,7 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         { // launch compute shaders!
-            glUseProgram(compute);
+            glUseProgram(gComputeProgram);
             glDispatchCompute((GLuint)WORLD_WIDTH, (GLuint)WORLD_HEIGHT, 1);
             count++;
         }
@@ -320,4 +288,53 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+}
+
+GLuint loadComputeShader(std::string computeShaderPath)
+{
+    std::ifstream     computeShaderFile;
+    std::stringstream computeShaderStream;
+    std::string       computeShaderCode;
+    const char*       computeShaderString;
+
+    int success;
+    char infoLog[512];
+
+    GLuint programID = glCreateProgram();
+    GLuint computeShaderID = glCreateShader(GL_COMPUTE_SHADER);
+
+    // open and read file
+    computeShaderFile.open(computeShaderPath);
+    computeShaderStream << computeShaderFile.rdbuf();
+    computeShaderFile.close();
+
+    // convert stream into string
+    computeShaderCode   = computeShaderStream.str();
+    computeShaderString = computeShaderCode.c_str();
+
+    // compile compute shader
+    glShaderSource(computeShaderID, 1, &computeShaderString, NULL);
+    glCompileShader(computeShaderID);
+    glGetShaderiv(computeShaderID, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        glGetShaderInfoLog(computeShaderID, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::COMPUTE::COMPILATION_FAILED\n" << infoLog << std::endl;
+        return false;
+    };
+
+    // link compute shader
+    glAttachShader(programID, computeShaderID);
+    glLinkProgram(programID);
+    glGetProgramiv(programID, GL_LINK_STATUS, &success);
+    if (!success)
+    {
+        glGetProgramInfoLog(programID, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::COMPUTE::LINKING_FAILED\n" << infoLog << std::endl;
+        return false;
+    }
+
+    glDeleteShader(computeShaderID);
+    
+    return programID;
 }
