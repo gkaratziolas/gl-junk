@@ -23,13 +23,9 @@ int render_mode = 0;
 
 #define WORLD_WIDTH   500
 #define WORLD_HEIGHT  500
+float initialConcArray[WORLD_HEIGHT][WORLD_WIDTH][4];
 
 #define PI 3.141279f
-
-float newA[WORLD_HEIGHT][WORLD_WIDTH];
-float newB[WORLD_HEIGHT][WORLD_WIDTH];
-float oldA[WORLD_HEIGHT][WORLD_WIDTH];
-float oldB[WORLD_HEIGHT][WORLD_WIDTH];
 
 float dx    = 1;
 float dt    = 0.0005;
@@ -38,84 +34,18 @@ float Db    = 100;
 float alpha = 0.01;
 float beta  = 1;
 
-void update_reaction() {
-    //std::swap(newA, oldA);
-    //std::swap(newB, oldB);
-
-    for (int y=0; y<WORLD_HEIGHT; y++) {
-        for (int x=0; x<WORLD_WIDTH; x++) {
-            double L;
-            int x0 = x-1;
-            int x1 = x;
-            int x2 = x+1;
-            int y0 = y-1;
-            int y1 = y;
-            int y2 = y+1;
-
-            // reflect out of bounds
-            if (x0 < 0)
-                x0 = x1;
-            if (x2 >= WORLD_WIDTH)
-                x2 = x1;
-            if (y0 < 0)
-                y0 = y1;
-            if (y2 >= WORLD_HEIGHT)
-                y2 = y1;
-
-            L =   (newA[y][x2] - 2*newA[y][x1] + newA[y][x0]) / (dx*dx)
-                + (newA[y2][x] - 2*newA[y1][x] + newA[y0][x]) / (dx*dx);
-
-            //newA[y][x] = newA[y][x] + dt * (Da*L);
-            oldA[y][x] = newA[y][x] + dt * (Da*L + newA[y][x] - newA[y][x]*newA[y][x]*newA[y][x] - oldB[y][x] + alpha);
-
-            L =   (newB[y][x2] - 2*newB[y][x1] + newB[y][x0]) / (dx*dx)
-                + (newB[y2][x] - 2*newB[y1][x] + newB[y0][x]) / (dx*dx);
-
-            oldB[y][x] = newB[y][x] + dt * (Db*L + beta*(oldA[y][x]-newB[y][x]));
-        }
-    }
-    for (int y=0; y<WORLD_HEIGHT; y++) {
-        for (int x=0; x<WORLD_WIDTH; x++) {
-            double L;
-            int x0 = x-1;
-            int x1 = x;
-            int x2 = x+1;
-            int y0 = y-1;
-            int y1 = y;
-            int y2 = y+1;
-
-            // reflect out of bounds
-            if (x0 < 0)
-                x0 = x1;
-            if (x2 >= WORLD_WIDTH)
-                x2 = x1;
-            if (y0 < 0)
-                y0 = y1;
-            if (y2 >= WORLD_HEIGHT)
-                y2 = y1;
-
-            L =   (oldA[y][x2] - 2*oldA[y][x1] + oldA[y][x0]) / (dx*dx)
-                + (oldA[y2][x] - 2*oldA[y1][x] + oldA[y0][x]) / (dx*dx);
-
-            //newA[y][x] = oldA[y][x] + dt * (Da*L);
-            newA[y][x] = oldA[y][x] + dt * (Da*L + oldA[y][x] - oldA[y][x]*oldA[y][x]*oldA[y][x] - oldB[y][x] + alpha);
-
-            L =   (oldB[y][x2] - 2*oldB[y][x1] + oldB[y][x0]) / (dx*dx)
-                + (oldB[y2][x] - 2*oldB[y1][x] + oldB[y0][x]) / (dx*dx);
-
-            newB[y][x] = oldB[y][x] + dt * (Db*L + beta*(oldA[y][x]-oldB[y][x]));
-        }
-    }
-    return;
-}
+struct _concTextures {
+    GLuint oldTextureID;
+    GLuint newTextureID;
+};
 
 GLuint loadComputeShader(std::string computeShaderPath);
-GLuint genComputeProg();
+struct _concTextures genConcTextures();
+void initConcTextures(struct _concTextures concTextures);
 
 int main()
 {
     // glfw: initialize and configure
-    // ------------------------------
     glfwInit();
     glfwDefaultWindowHints();
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -127,7 +57,6 @@ int main()
 #endif
 
     // glfw window creation
-    // --------------------
     GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "ahhhhh!", NULL, NULL);
     if (window == NULL) {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -138,18 +67,18 @@ int main()
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
     // glad: load all OpenGL function pointers
-    // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
 
-    // build and compile our shader zprogram
-    // ------------------------------------
-    GLuint gComputeProgram = loadComputeShader("turing.cs");
-    if (gComputeProgram == false)
+    // build and compile our shader programs and texure
+    GLuint computeProgramID = loadComputeShader("turing.cs");
+    if (computeProgramID == false)
         return -1;
     Shader ourShader("texture.vs", "texture.fs"); 
+    struct _concTextures concTextures = genConcTextures();
+    initConcTextures(concTextures);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -184,39 +113,13 @@ int main()
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    srand( (unsigned)time(NULL) );
-
-    for (int y=0; y<WORLD_HEIGHT; y++) {
-        for (int x=0; x<WORLD_WIDTH; x++) {
-                newA[y][x] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-                newB[y][x] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
-        }
-    }
-
-    // load and create a texture 
-    // -------------------------
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, texture); // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
-    // set the texture wrapping parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);   // set texture wrapping to GL_REPEAT (default wrapping method)
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // set texture filtering parameters
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    // note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
-    glBindBuffer(GL_ARRAY_BUFFER, 0); 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, NULL);
-
-    glBindImageTexture(0, texture, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
     // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
     // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-    glBindVertexArray(0); 
+    glBindVertexArray(0);
+
+    srand((unsigned)time(NULL));
 
     // render loop
-    // -----------
     clock_t begin = clock();
     clock_t accumilator = clock();
     int time_step = 300;
@@ -227,32 +130,33 @@ int main()
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        { // launch compute shaders!
-            glUseProgram(gComputeProgram);
+        for (int i = 0; i < 100; i++) {
+            // Move 'new' data into 'old' texture
+            glCopyImageSubData(concTextures.newTextureID, GL_TEXTURE_2D, 0, 0, 0, 0,
+                               concTextures.oldTextureID, GL_TEXTURE_2D, 0, 0, 0, 0,
+                               WORLD_WIDTH, WORLD_HEIGHT, 1);
+
+            // Calculate 'new' data from 'old'
+            glUniform1i(glGetUniformLocation(computeProgramID, "oldConc"), 0);
+            glBindImageTexture(0, concTextures.oldTextureID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
+            glUniform1i(glGetUniformLocation(computeProgramID, "newConc"), 1);
+            glBindImageTexture(1, concTextures.newTextureID, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
+
+            glUseProgram(computeProgramID);
             glDispatchCompute((GLuint)WORLD_WIDTH, (GLuint)WORLD_HEIGHT, 1);
+
+            // make sure writing to image has finished before read
+            glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
             count++;
         }
 
-        // make sure writing to image has finished before read
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
         // render
-        // ------
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        // draw our first triangle
         ourShader.use();
-        glBindVertexArray(VAO); // seeing as we only have a single VAO there's no need to bind it every time, but we'll do so to keep things a bit more organized
+        glBindVertexArray(VAO); 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindTexture(GL_TEXTURE_2D, concTextures.oldTextureID);
 
-        //if (render_mode == 0) {
-        //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RED, GL_FLOAT, newA);
-        //} else {
-        //    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RED, GL_FLOAT, newB);
-        //}
         std::cout << count << std::endl;
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -288,6 +192,53 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // make sure the viewport matches the new window dimensions; note that width and 
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
+}
+
+struct _concTextures genConcTextures()
+{
+    struct _concTextures conc;
+
+    glGenTextures(1, &(conc.oldTextureID));
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, conc.oldTextureID);
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glGenTextures(1, &(conc.newTextureID));
+    glActiveTexture(GL_TEXTURE0 + 1);
+    glBindTexture(GL_TEXTURE_2D, conc.newTextureID);
+    // set the texture wrapping parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // set texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    return conc;
+}
+
+void initConcTextures(struct _concTextures concTextures)
+{
+    // Creare 2D array of vec4s to store intial values of 
+    for (int y = 0; y < WORLD_HEIGHT; y++) {
+        for (int x = 0; x < WORLD_WIDTH; x++) {
+            initialConcArray[y][x][0] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX); // initial 'A' value
+            initialConcArray[y][x][1] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX); // initial 'B' value
+            initialConcArray[y][x][2] = 0.0f;
+            initialConcArray[y][x][3] = 0.0f;
+        }
+    }
+    glBindTexture(GL_TEXTURE_2D, concTextures.newTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, initialConcArray);
+    glBindTexture(GL_TEXTURE_2D, concTextures.oldTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, 0);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 GLuint loadComputeShader(std::string computeShaderPath)

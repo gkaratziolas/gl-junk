@@ -1,13 +1,52 @@
 #version 430
 layout(local_size_x = 1, local_size_y = 1) in;
-layout(rgba32f, binding = 0) uniform image2D img_output;
+
+layout(location = 0, binding = 0, rgba32f) uniform readonly  image2D oldConc;
+layout(location = 1, binding = 1, rgba32f) uniform writeonly image2D newConc;
+
+// 
+//       py0         y    
+//   px0 p11 px2     |  x - >  
+//       py2         V 
+//
+
+float dx    = 1;
+float dt    = 0.0005;
+float Da    = 1;
+float Db    = 100;
+float alpha = 0.01;
+float beta  = 1;
+
+float Ra (float a, float b)
+{
+    return a - a*a*a - b + alpha;
+}
+
+float Rb(float a, float b)
+{
+    return beta * (a - b);
+}
 
 void main() {
-	// get index in global work group i.e x,y position
-	ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
-	ivec2 dims = imageSize(img_output);
-	vec4 pixel = vec4(float(pixel_coords.x) / dims.x, 0.0f, float(pixel_coords.y) / dims.y, 1.0f);
-	 	
-	// output to a specific pixel in the image
-	imageStore(img_output, pixel_coords, pixel);
+    // get index in global work group i.e x,y position
+    ivec2 p11Coords = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 py0Coords = p11Coords + ivec2( 0, -1);
+    ivec2 py2Coords = p11Coords + ivec2( 0,  1);
+    ivec2 px0Coords = p11Coords + ivec2(-1,  0);
+    ivec2 px2Coords = p11Coords + ivec2( 1,  0);
+
+    vec4 p11 = imageLoad(oldConc, p11Coords).rgba;
+    vec4 py0 = imageLoad(oldConc, py0Coords).rgba;
+    vec4 py2 = imageLoad(oldConc, py2Coords).rgba;
+    vec4 px0 = imageLoad(oldConc, px0Coords).rgba;
+    vec4 px2 = imageLoad(oldConc, px2Coords).rgba;
+
+    vec4 L = (px2 - 2 * p11 + px0) / (dx * dx)
+           + (py2 - 2 * p11 + py0) / (dx * dx);
+
+    p11.x = p11.x + dt * (Da * L.x + Ra(p11.x, p11.y));
+    p11.y = p11.y + dt * (Db * L.y + Rb(p11.a, p11.y));
+
+    // output to a specific pixel in the image
+    imageStore(newConc, p11Coords, p11);
 }
