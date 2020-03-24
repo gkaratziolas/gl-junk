@@ -12,34 +12,23 @@
 #include <cmath>
 #include <ctime>
 
-void framebuffer_size_callback(GLFWwindow* window, int width, int height);
-void processInput(GLFWwindow *window);
-
-// settings
 const unsigned int SCR_WIDTH  = 1000;
 const unsigned int SCR_HEIGHT = 1000;
-
-int render_mode = 0;
 
 #define WORLD_WIDTH   500
 #define WORLD_HEIGHT  500
 float initialConcArray[WORLD_HEIGHT][WORLD_WIDTH][4];
-
-#define PI 3.141279f
-
-float dx    = 1;
-float dt    = 0.0005;
-float Da    = 1;
-float Db    = 100;
-float alpha = 0.01;
-float beta  = 1;
 
 struct _concTextures {
     GLuint oldTextureID;
     GLuint newTextureID;
 };
 
+void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+void processInput(GLFWwindow* window);
+
 GLuint loadComputeShader(std::string computeShaderPath);
+
 struct _concTextures genConcTextures();
 void initConcTextures(struct _concTextures concTextures);
 
@@ -137,12 +126,16 @@ int main()
                                WORLD_WIDTH, WORLD_HEIGHT, 1);
 
             // Calculate 'new' data from 'old'
+            glUseProgram(computeProgramID);
+
+            //glActiveTexture(GL_TEXTURE0);
             glUniform1i(glGetUniformLocation(computeProgramID, "oldConc"), 0);
             glBindImageTexture(0, concTextures.oldTextureID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-            glUniform1i(glGetUniformLocation(computeProgramID, "newConc"), 1);
-            glBindImageTexture(1, concTextures.newTextureID, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGBA32F);
 
-            glUseProgram(computeProgramID);
+            //glActiveTexture(GL_TEXTURE0+1);
+            glUniform1i(glGetUniformLocation(computeProgramID, "newConc"), 1);
+            glBindImageTexture(1, concTextures.newTextureID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
             glDispatchCompute((GLuint)WORLD_WIDTH, (GLuint)WORLD_HEIGHT, 1);
 
             // make sure writing to image has finished before read
@@ -155,38 +148,30 @@ int main()
         glBindVertexArray(VAO); 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, concTextures.oldTextureID);
+        glBindTexture(GL_TEXTURE_2D, concTextures.newTextureID);
 
         std::cout << count << std::endl;
 
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-        // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
     // glfw: terminate, clearing all previously allocated GLFW resources.
-    // ------------------------------------------------------------------
     glfwTerminate();
     return 0;
 }
 
 // process all input: query GLFW whether relevant keys are pressed/released this frame and react accordingly
-// ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
-    } else if (glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
-        render_mode = 0;
-    } else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
-        render_mode = 1;
     }
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
-// ---------------------------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     // make sure the viewport matches the new window dimensions; note that width and 
