@@ -131,9 +131,9 @@ int main()
             glUseProgram(computeProgramID);
 
             glUniform1i(glGetUniformLocation(computeProgramID, "oldConc"), 0);
-            glBindImageTexture(0, concTextures.oldTextureID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
-
             glUniform1i(glGetUniformLocation(computeProgramID, "newConc"), 1);
+
+            glBindImageTexture(0, concTextures.oldTextureID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
             glBindImageTexture(1, concTextures.newTextureID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
             glDispatchCompute((GLuint)WORLD_WIDTH, (GLuint)WORLD_HEIGHT, 1);

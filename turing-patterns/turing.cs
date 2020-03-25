@@ -14,8 +14,8 @@ float dx    = 1;
 float dt    = 0.0005;
 float Da    = 1;
 float Db    = 100;
-float alpha = 0.01;
-float beta  = 1;
+float alpha = -0.005;
+float beta  = 10;
 
 float Ra (float a, float b)
 {
@@ -28,6 +28,7 @@ float Rb(float a, float b)
 }
 
 void main() {
+    ivec2 imgSize = imageSize(oldConc);
     // get index in global work group i.e x,y position
     ivec2 p11Coords = ivec2(gl_GlobalInvocationID.xy);
     ivec2 py0Coords = p11Coords + ivec2( 0, -1);
@@ -36,16 +37,30 @@ void main() {
     ivec2 px2Coords = p11Coords + ivec2( 1,  0);
 
     vec4 p11 = imageLoad(oldConc, p11Coords).rgba;
-    vec4 py0 = imageLoad(oldConc, py0Coords).rgba;
-    vec4 py2 = imageLoad(oldConc, py2Coords).rgba;
-    vec4 px0 = imageLoad(oldConc, px0Coords).rgba;
-    vec4 px2 = imageLoad(oldConc, px2Coords).rgba;
+    vec4 py0 = p11;
+    vec4 py2 = p11;
+    vec4 px0 = p11;
+    vec4 px2 = p11;
+    if (p11Coords.y > 0) { 
+        py0 = imageLoad(oldConc, py0Coords).rgba;
+    }
+    if (p11Coords.y < imgSize.y - 1)
+    {
+        py2 = imageLoad(oldConc, py2Coords).rgba;
+    }
+    if (p11Coords.x > 0)
+    {
+        px0 = imageLoad(oldConc, px0Coords).rgba;
+    }
+    if (p11Coords.x < imgSize.x - 1)
+    {
+        px2 = imageLoad(oldConc, px2Coords).rgba;
+    }
 
-    vec4 L = (px2 - 2 * p11 + px0) / (dx * dx)
-           + (py2 - 2 * p11 + py0) / (dx * dx);
+    vec4 L = (px2 + px0 + py2 + py0 - 4 * p11) / (dx * dx);
 
-    p11.x = p11.x + dt * (Da * L.x + Ra(p11.x, p11.y));
-    p11.y = p11.y + dt * (Db * L.y + Rb(p11.a, p11.y));
+    p11.x = p11.x + dt * ((Da * L.x) + Ra(p11.x, p11.y));
+    p11.y = p11.y + dt * ((Db * L.y) + Rb(p11.x, p11.y));
 
     // output to a specific pixel in the image
     imageStore(newConc, p11Coords, p11);
