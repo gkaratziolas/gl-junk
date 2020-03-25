@@ -32,6 +32,8 @@ GLuint loadComputeShader(std::string computeShaderPath);
 struct _concTextures genConcTextures();
 void initConcTextures(struct _concTextures concTextures);
 
+bool randomize_pending = false;
+
 int main()
 {
     // glfw: initialize and configure
@@ -128,11 +130,9 @@ int main()
             // Calculate 'new' data from 'old'
             glUseProgram(computeProgramID);
 
-            //glActiveTexture(GL_TEXTURE0);
             glUniform1i(glGetUniformLocation(computeProgramID, "oldConc"), 0);
             glBindImageTexture(0, concTextures.oldTextureID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
 
-            //glActiveTexture(GL_TEXTURE0+1);
             glUniform1i(glGetUniformLocation(computeProgramID, "newConc"), 1);
             glBindImageTexture(1, concTextures.newTextureID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
@@ -155,6 +155,11 @@ int main()
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(window);
         glfwPollEvents();
+
+        if (randomize_pending == true) {
+            initConcTextures(concTextures);
+            randomize_pending = false;
+        }
     }
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
@@ -168,6 +173,8 @@ void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
+    } else if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
+        randomize_pending = true;
     }
 }
 
@@ -220,9 +227,9 @@ void initConcTextures(struct _concTextures concTextures)
         }
     }
     glBindTexture(GL_TEXTURE_2D, concTextures.newTextureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, initialConcArray);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, initialConcArray);
     glBindTexture(GL_TEXTURE_2D, concTextures.oldTextureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, initialConcArray);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
