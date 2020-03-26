@@ -19,8 +19,8 @@
 const unsigned int SCR_WIDTH  = 1024;
 const unsigned int SCR_HEIGHT = 1024;
 
-#define WORLD_WIDTH   1024
-#define WORLD_HEIGHT  1024
+#define WORLD_WIDTH   512
+#define WORLD_HEIGHT  512
 float initialConcArray[WORLD_HEIGHT][WORLD_WIDTH][4];
 
 struct _concTextures {
@@ -136,6 +136,7 @@ int main()
     float Db = 100.f;
     float alpha = -0.005f;
     float beta = 10.f;
+    int reactionMode = 0;
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -148,6 +149,17 @@ int main()
 
         ImGui::Begin("Hello, world!");
         ImGui::Text("Is this working?");
+
+        ImGui::InputInt("Reaction Mode", &reactionMode);
+        ImGui::InputFloat("dx",    &dx,    0.01f,    1.f,    "%.3f");
+        ImGui::InputFloat("dt",    &dt,    0.00001f, 0.001f, "%.5f");
+        ImGui::InputFloat("Da",    &Da,    0.01f,    1.f,    "%.3f");
+        ImGui::InputFloat("Db",    &Db,    0.01f,    1.f,    "%.3f");
+        ImGui::InputFloat("alpha", &alpha, 0.00001f, 0.001f, "%.5f");
+        ImGui::InputFloat("beta",  &beta,  0.01f,    1.f,    "%.3f");
+
+        //ImGui::InputFloat2();
+        //ImGui::InputFloat2();
         ImGui::End();
 
         for (int i = 0; i < 100; i++) {
@@ -169,6 +181,8 @@ int main()
             glUniform1f(glGetUniformLocation(computeProgramID, "Db"),    Db);
             glUniform1f(glGetUniformLocation(computeProgramID, "alpha"), alpha);
             glUniform1f(glGetUniformLocation(computeProgramID, "beta"),  beta);
+
+            glUniform1i(glGetUniformLocation(computeProgramID, "reactionMode"), reactionMode);
 
             glBindImageTexture(0, concTextures.oldTextureID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
             glBindImageTexture(1, concTextures.newTextureID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);

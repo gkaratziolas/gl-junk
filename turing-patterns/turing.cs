@@ -11,6 +11,8 @@ layout(location = 5) uniform float Db;
 layout(location = 6) uniform float alpha;
 layout(location = 7) uniform float beta;
 
+layout(location = 8) uniform int reactionMode;
+
 // 
 //       py0         y    
 //   px0 p11 px2     |  x - >  
@@ -19,12 +21,24 @@ layout(location = 7) uniform float beta;
 
 float Ra (float a, float b)
 {
-    return a - a*a*a - b + alpha;
+    if (reactionMode == 0) {
+        return 0.f;
+    } else if (reactionMode == 1) {
+        return a - a*a*a - b + alpha;
+    } else {
+        return - a*b*b + alpha * (1 - a);
+    }
 }
 
-float Rb(float a, float b)
+float Rb (float a, float b)
 {
-    return beta * (a - b);
+    if (reactionMode == 0) {
+        return 0.f;
+    } else if (reactionMode == 1) {
+        return beta * (a - b);
+    } else {
+        return + a*b*b - (alpha + beta) * b;
+    }
 }
 
 void main() {
