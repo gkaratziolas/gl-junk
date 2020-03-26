@@ -1,21 +1,21 @@
 #version 430
-layout(local_size_x = 1, local_size_y = 1) in;
+layout(local_size_x = 32, local_size_y = 32) in;
 
 layout(location = 0, binding = 0, rgba32f) uniform readonly  image2D oldConc;
 layout(location = 1, binding = 1, rgba32f) uniform writeonly image2D newConc;
+
+layout(location = 2) uniform float dx;
+layout(location = 3) uniform float dt;
+layout(location = 4) uniform float Da;
+layout(location = 5) uniform float Db;
+layout(location = 6) uniform float alpha;
+layout(location = 7) uniform float beta;
 
 // 
 //       py0         y    
 //   px0 p11 px2     |  x - >  
 //       py2         V 
 //
-
-float dx    = 1;
-float dt    = 0.0005;
-float Da    = 1;
-float Db    = 100;
-float alpha = -0.005;
-float beta  = 10;
 
 float Ra (float a, float b)
 {

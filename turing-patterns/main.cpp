@@ -12,11 +12,11 @@
 #include <cmath>
 #include <ctime>
 
-const unsigned int SCR_WIDTH  = 1000;
-const unsigned int SCR_HEIGHT = 1000;
+const unsigned int SCR_WIDTH  = 1024;
+const unsigned int SCR_HEIGHT = 1024;
 
-#define WORLD_WIDTH   500
-#define WORLD_HEIGHT  500
+#define WORLD_WIDTH   1024
+#define WORLD_HEIGHT  1024
 float initialConcArray[WORLD_HEIGHT][WORLD_WIDTH][4];
 
 struct _concTextures {
@@ -116,6 +116,13 @@ int main()
     int time_step = 300;
     int count = 0;
 
+    float dx = 1;
+    float dt = 0.0005;
+    float Da = 1;
+    float Db = 100;
+    float alpha = -0.005;
+    float beta = 10;
+
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
 
@@ -133,10 +140,18 @@ int main()
             glUniform1i(glGetUniformLocation(computeProgramID, "oldConc"), 0);
             glUniform1i(glGetUniformLocation(computeProgramID, "newConc"), 1);
 
+            // Set simulation parameters - TODO: does this need to happen every time?
+            glUniform1f(glGetUniformLocation(computeProgramID, "dx"),    dx);
+            glUniform1f(glGetUniformLocation(computeProgramID, "dt"),    dt);
+            glUniform1f(glGetUniformLocation(computeProgramID, "Da"),    Da);
+            glUniform1f(glGetUniformLocation(computeProgramID, "Db"),    Db);
+            glUniform1f(glGetUniformLocation(computeProgramID, "alpha"), alpha);
+            glUniform1f(glGetUniformLocation(computeProgramID, "beta"),  beta);
+
             glBindImageTexture(0, concTextures.oldTextureID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
             glBindImageTexture(1, concTextures.newTextureID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-            glDispatchCompute((GLuint)WORLD_WIDTH, (GLuint)WORLD_HEIGHT, 1);
+            glDispatchCompute((GLuint)WORLD_WIDTH / 32, (GLuint)WORLD_HEIGHT / 32, 1);
 
             // make sure writing to image has finished before read
             glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
