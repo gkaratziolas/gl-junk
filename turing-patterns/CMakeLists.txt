@@ -15,7 +15,7 @@ file(COPY texture.vs DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 file(COPY turing.cs DESTINATION ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
 add_executable("${PROJECT_NAME}"
-        "tp.cpp"
+        "main.cpp"
         "shader.h"
         ${GLAD_SRC})
 
