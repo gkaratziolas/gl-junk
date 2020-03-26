@@ -1,3 +1,7 @@
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -39,6 +43,7 @@ int main()
     // glfw: initialize and configure
     glfwInit();
     glfwDefaultWindowHints();
+    const char* glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -62,6 +67,15 @@ int main()
         std::cout << "Failed to initialize GLAD" << std::endl;
         return -1;
     }
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui::StyleColorsDark();
+
+    // Setup Platform/Renderer bindings
+    ImGui_ImplGlfw_InitForOpenGL(window, true);
+    ImGui_ImplOpenGL3_Init(glsl_version);
 
     // build and compile our shader programs and texure
     GLuint computeProgramID = loadComputeShader("turing.cs");
@@ -116,17 +130,25 @@ int main()
     int time_step = 300;
     int count = 0;
 
-    float dx = 1;
-    float dt = 0.0005;
-    float Da = 1;
-    float Db = 100;
-    float alpha = -0.005;
-    float beta = 10;
+    float dx = 1.f;
+    float dt = 0.0005f;
+    float Da = 1.f;
+    float Db = 100.f;
+    float alpha = -0.005f;
+    float beta = 10.f;
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        ImGui::Begin("Hello, world!");
+        ImGui::Text("Is this working?");
+        ImGui::End();
 
         for (int i = 0; i < 100; i++) {
             // Move 'new' data into 'old' texture
@@ -167,6 +189,8 @@ int main()
 
         std::cout << count << std::endl;
 
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         glfwSwapBuffers(window);
         glfwPollEvents();
