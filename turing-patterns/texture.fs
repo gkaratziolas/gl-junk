@@ -5,6 +5,8 @@ in vec2 TexCoord;
 
 // texture sampler
 uniform sampler2D texture1;
+uniform int chemicalView;
+uniform int colourMode;
 
 vec4 linear_colour(float x)
 {
@@ -44,6 +46,24 @@ vec4 constant_sum_colour(float x)
 
 void main()
 {
-	float intensity = texture(texture1, TexCoord).x;
-	FragColor = constant_sum_colour(intensity);
+	float intensity;
+	if (chemicalView == 0) {
+		intensity = texture(texture1, TexCoord).x;
+	} else {
+		intensity = texture(texture1, TexCoord).y;
+	}
+
+	if (colourMode == 0) {
+		FragColor = vec4(intensity, 0.f, 0.f, 1.f);
+	} else if (colourMode == 1) {
+		FragColor = vec4(0.f, intensity, 0.f, 1.f);
+	} else if (colourMode == 2) {
+		FragColor = vec4(0.f, 0.f, intensity, 1.f);
+	} else if (colourMode == 3) {
+		FragColor = linear_colour(intensity);
+	} else if (colourMode == 4) {
+		FragColor = leopard(intensity);
+	} else {
+		FragColor = constant_sum_colour(intensity);
+	}
 }

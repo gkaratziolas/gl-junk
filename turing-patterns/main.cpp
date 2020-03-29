@@ -19,8 +19,8 @@
 const unsigned int SCR_WIDTH  = 1024;
 const unsigned int SCR_HEIGHT = 1024;
 
-#define WORLD_WIDTH   512
-#define WORLD_HEIGHT  512
+#define WORLD_WIDTH   1024
+#define WORLD_HEIGHT  1024
 float initialConcArray[WORLD_HEIGHT][WORLD_WIDTH][4];
 
 struct _concTextures {
@@ -34,7 +34,8 @@ void processInput(GLFWwindow* window);
 GLuint loadComputeShader(std::string computeShaderPath);
 
 struct _concTextures genConcTextures();
-void initConcTextures(struct _concTextures concTextures);
+void initConcTexRandom(struct _concTextures concTextures);
+void initConcTexSpots(struct _concTextures concTextures, int numSpots, float spotRadius);
 
 bool randomize_pending = false;
 
@@ -83,7 +84,10 @@ int main()
         return -1;
     Shader ourShader("texture.vs", "texture.fs"); 
     struct _concTextures concTextures = genConcTextures();
-    initConcTextures(concTextures);
+    int spotsNum      = 100;
+    float spotsRadius = 10.f;
+
+    initConcTexSpots(concTextures, spotsNum, spotsRadius);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -137,6 +141,8 @@ int main()
     float alpha = -0.005f;
     float beta = 10.f;
     int reactionMode = 0;
+    int colourMode = 0;
+    int chemicalView = 0;
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -151,6 +157,8 @@ int main()
         ImGui::Text("Is this working?");
 
         ImGui::InputInt("Reaction Mode", &reactionMode);
+        ImGui::InputInt("Colour Mode",   &colourMode);
+        ImGui::InputInt("Chemical View", &chemicalView);
         ImGui::InputFloat("dx",    &dx,    0.01f,    1.f,    "%.3f");
         ImGui::InputFloat("dt",    &dt,    0.00001f, 0.001f, "%.5f");
         ImGui::InputFloat("Da",    &Da,    0.01f,    1.f,    "%.3f");
@@ -158,8 +166,9 @@ int main()
         ImGui::InputFloat("alpha", &alpha, 0.00001f, 0.001f, "%.5f");
         ImGui::InputFloat("beta",  &beta,  0.01f,    1.f,    "%.3f");
 
-        //ImGui::InputFloat2();
-        //ImGui::InputFloat2();
+        ImGui::InputInt("Number of spots", &spotsNum);
+        ImGui::InputFloat("Spot radius", &spotsRadius, 0.01f, 1.f, "%.3f");
+
         ImGui::End();
 
         for (int i = 0; i < 100; i++) {
@@ -196,6 +205,8 @@ int main()
 
         // render
         ourShader.use();
+        ourShader.setInt("colourMode", colourMode);
+        ourShader.setInt("chemicalView", chemicalView);
         glBindVertexArray(VAO); 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glActiveTexture(GL_TEXTURE0);
@@ -210,7 +221,7 @@ int main()
         glfwPollEvents();
 
         if (randomize_pending == true) {
-            initConcTextures(concTextures);
+            initConcTexSpots(concTextures, spotsNum, spotsRadius);
             randomize_pending = false;
         }
     }
@@ -268,9 +279,9 @@ struct _concTextures genConcTextures()
     return conc;
 }
 
-void initConcTextures(struct _concTextures concTextures)
+void initConcTexRandom(struct _concTextures concTextures)
 {
-    // Creare 2D array of vec4s to store intial values of 
+    // Populate 2D array of vec4s to store intial values of chemical concentations 
     for (int y = 0; y < WORLD_HEIGHT; y++) {
         for (int x = 0; x < WORLD_WIDTH; x++) {
             initialConcArray[y][x][0] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX); // initial 'A' value
@@ -279,6 +290,44 @@ void initConcTextures(struct _concTextures concTextures)
             initialConcArray[y][x][3] = 0.0f;
         }
     }
+    glBindTexture(GL_TEXTURE_2D, concTextures.newTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, initialConcArray);
+    glBindTexture(GL_TEXTURE_2D, concTextures.oldTextureID);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, initialConcArray);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void initConcTexSpots(struct _concTextures concTextures, int numSpots, float spotRadius)
+{
+    if (numSpots < 0)
+        numSpots = 0;
+
+    // Populate 2D array of vec4s to store intial values of chemical concentations
+    for (int y = 0; y < WORLD_HEIGHT; y++) {
+        for (int x = 0; x < WORLD_WIDTH; x++) {
+            initialConcArray[y][x][0] = 0.0f; // initial 'A' value
+            initialConcArray[y][x][1] = 0.0f; // initial 'B' value
+            initialConcArray[y][x][2] = 0.0f;
+            initialConcArray[y][x][3] = 0.0f;
+        }
+    }
+
+    // Set initial conc values inside of spots
+    float x0, y0;
+    float spotRadiusSquared = spotRadius * spotRadius;
+    for (int i = 0; i < numSpots; i++) {
+        x0 = WORLD_WIDTH  * static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        y0 = WORLD_HEIGHT * static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        for (int y = 0; y < WORLD_HEIGHT; y++) {
+            for (int x = 0; x < WORLD_WIDTH; x++) {
+                if ((x - x0) * (x - x0) + (y - y0) * (y - y0) <= spotRadiusSquared) {
+                    initialConcArray[y][x][0] = 0.5f;
+                    initialConcArray[y][x][1] = 0.25f;
+                }
+            }
+        }
+    }
+
     glBindTexture(GL_TEXTURE_2D, concTextures.newTextureID);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WORLD_WIDTH, WORLD_HEIGHT, 0, GL_RGBA, GL_FLOAT, initialConcArray);
     glBindTexture(GL_TEXTURE_2D, concTextures.oldTextureID);
