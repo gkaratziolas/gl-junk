@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(turing)
+set (CMAKE_CXX_STANDARD 11)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "bin/")
 
 add_subdirectory(../lib/glfw-3.3.2 lib)
