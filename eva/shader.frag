@@ -84,8 +84,22 @@ void main()
 	//float H = 360 * tan(r - phase/1000) + 360 * tan(x*y - phase/1000);
 	float r0 = length(vec2(x, y) - vec2(-0.5, 0));
 	float r1 = length(vec2(x, y) - vec2(0.5, 0));
-	
-	float H = 180 * cos(r0 * phase / 100) + 180 * cos(r1 * phase / 100);
+	float r2 = length(vec2(x, y) - vec2(0, 0.5));
+	float r3 = length(vec2(x, y) - vec2(0, -0.5));
+
+	int N = 4;
+	float R = 0.5;
+	float H = 0;
+	for (int i = 0; i < N; i++) {
+		r = length(vec2(x, y) - vec2(R * cos(6.283185 * float(i) / float(N)),
+		                             R * sin(6.283185 * float(i) / float(N))));
+		H += 180 * cos(r * phase / 10);
+	}
+
+	//float H = 180 * cos(r0 * phase / 10)
+	//        + 180 * cos(r1 * phase / 10)
+	//		+ 180 * cos(r2 * phase / 10)
+	//		+ 180 * cos(r3 * phase / 10);
 	//float H = 10000/(r*r) - phase;
 	//float H = ourColor.x * 180;
 	float S = 0.9f;//1 - length(vec2(ourColor.x, ourColor.y)) / sqrt(2);
