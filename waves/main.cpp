@@ -135,8 +135,10 @@ int main()
 
     float dx = 1.f;
     float dt = 0.0005f;
-    float c = 100; // ms^-1
+    float c = 50; // ms^-1
+    int global_boundary = 0;
     int colourMode = 0;
+    float t = 0;
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -151,13 +153,15 @@ int main()
         ImGui::Text("Is this working?");
 
         ImGui::InputInt("Colour Mode",   &colourMode);
-        ImGui::InputFloat("dx",    &dx,    0.01f,    1.f,    "%.3f");
-        ImGui::InputFloat("dt",    &dt,    0.00001f, 0.001f, "%.5f");
-        ImGui::InputFloat("c",     &c,     0.01f,    1.f,    "%.3f");
+        ImGui::InputFloat("dx",    &dx,    0.01f,     1.f,  "%.3f");
+        ImGui::InputFloat("dt",    &dt,    0.0001f, 0.01f,  "%.5f");
+        ImGui::InputFloat("c",     &c,     0.1f,     10.f,  "%.3f");
+        ImGui::InputInt("global_boundary", &global_boundary, 1, 1);
 
         ImGui::End();
 
         for (int i = 0; i < 100; i++) {
+            t += dt;
             // Move 'new' data into 'old' texture
             glCopyImageSubData(worldTextures.newTextureID, GL_TEXTURE_2D, 0, 0, 0, 0,
                                worldTextures.oldTextureID, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -173,6 +177,8 @@ int main()
             glUniform1f(glGetUniformLocation(computeProgramID, "dx"),    dx);
             glUniform1f(glGetUniformLocation(computeProgramID, "dt"),    dt);
             glUniform1f(glGetUniformLocation(computeProgramID, "c"),     c);
+            glUniform1i(glGetUniformLocation(computeProgramID, "global_boundary"), global_boundary);
+            glUniform1f(glGetUniformLocation(computeProgramID, "t"), t);
 
             glBindImageTexture(0, worldTextures.oldTextureID, 0, GL_FALSE, 0, GL_READ_ONLY, GL_RGBA32F);
             glBindImageTexture(1, worldTextures.newTextureID, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
@@ -192,7 +198,7 @@ int main()
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, worldTextures.newTextureID);
 
-        std::cout << count << std::endl;
+        std::cout << count << " (" << t << ")" << std::endl;
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -202,7 +208,7 @@ int main()
 
         if (randomize_pending == true) {
             zeroWorldArray();
-            drawWorldArraySpot(400, 100, 100);
+            //drawWorldArraySpot(WORLD_WIDTH/2, 100, 100);
             addWorldBoundary();
 
             writeWorldArrayToTex(worldTextures);
@@ -277,20 +283,20 @@ void zeroWorldArray(void)
 
 void addWorldBoundary(void)
 {
-    for (int y = 500; y < 520; y++) {
-        for (int x = 0; x < (WORLD_WIDTH) / 3; x++) {
+    for (int y = 500; y < 510; y++) {
+        for (int x = 0; x < (3*WORLD_WIDTH) / 7; x++) {
             initialWorldArray[y][x][0] = 0.0f; // initial 'u' value
             initialWorldArray[y][x][1] = 0.0f; // initial 'du/dt' value
             initialWorldArray[y][x][2] = 0.0f; // initial 'F' value
             initialWorldArray[y][x][3] = 1.0f; // initial 'boundary' value
         }
-        for (int x = ((WORLD_WIDTH)/3 + 20); x < (2*(WORLD_WIDTH)/3 -20); x++) {
+        for (int x = ((3*WORLD_WIDTH)/7 + 30); x < (4*(WORLD_WIDTH)/7 - 30); x++) {
             initialWorldArray[y][x][0] = 0.0f; // initial 'u' value
             initialWorldArray[y][x][1] = 0.0f; // initial 'du/dt' value
             initialWorldArray[y][x][2] = 0.0f; // initial 'F' value
             initialWorldArray[y][x][3] = 1.0f; // initial 'boundary' value
         }
-        for (int x = (2*WORLD_WIDTH) / 3; x < WORLD_WIDTH; x++) {
+        for (int x = (4*WORLD_WIDTH) / 7; x < WORLD_WIDTH; x++) {
             initialWorldArray[y][x][0] = 0.0f; // initial 'u' value
             initialWorldArray[y][x][1] = 0.0f; // initial 'du/dt' value
             initialWorldArray[y][x][2] = 0.0f; // initial 'F' value
