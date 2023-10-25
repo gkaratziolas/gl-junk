@@ -34,7 +34,9 @@ void processInput(GLFWwindow* window);
 GLuint loadComputeShader(std::string computeShaderPath);
 void zeroWorldArray();
 void drawWorldArraySpot(float, float, float);
-void addWorldBoundary();
+void addSingleSlit(void);
+void addDoubleSlit(void);
+void addWorldSponge(int, float);
 void writeWorldArrayToTex(struct _worldTextures worldTextures);
 
 struct _worldTextures genWorldTextures();
@@ -137,6 +139,7 @@ int main()
     float dt = 0.0005f;
     float c = 50; // ms^-1
     int global_boundary = 0;
+    int walls = 0;
     int colourMode = 0;
     float t = 0;
 
@@ -157,6 +160,7 @@ int main()
         ImGui::InputFloat("dt",    &dt,    0.0001f, 0.01f,  "%.5f");
         ImGui::InputFloat("c",     &c,     0.1f,     10.f,  "%.3f");
         ImGui::InputInt("global_boundary", &global_boundary, 1, 1);
+        ImGui::InputInt("walls", &walls, 1, 1);
 
         ImGui::End();
 
@@ -209,7 +213,13 @@ int main()
         if (randomize_pending == true) {
             zeroWorldArray();
             //drawWorldArraySpot(WORLD_WIDTH/2, 100, 100);
-            addWorldBoundary();
+            addWorldSponge(100, 0.001);
+
+            if (walls == 1) {
+                addSingleSlit();
+            } else if (walls == 2) {
+                addDoubleSlit();
+            }
 
             writeWorldArrayToTex(worldTextures);
             randomize_pending = false;
@@ -276,48 +286,44 @@ void zeroWorldArray(void)
             initialWorldArray[y][x][0] = 0.0f; // initial 'u' value
             initialWorldArray[y][x][1] = 0.0f; // initial 'du/dt' value
             initialWorldArray[y][x][2] = 0.0f; // initial 'F' value
-            initialWorldArray[y][x][3] = 0.0f; // initial 'boundary' value
+            initialWorldArray[y][x][3] = 0.0f; // initial 'attenuation' value
         }
     }
 }
 
-void addWorldBoundary(void)
+void addDoubleSlit(void)
 {
     for (int y = 500; y < 510; y++) {
         for (int x = 0; x < (3*WORLD_WIDTH) / 7; x++) {
-            initialWorldArray[y][x][0] = 0.0f; // initial 'u' value
-            initialWorldArray[y][x][1] = 0.0f; // initial 'du/dt' value
-            initialWorldArray[y][x][2] = 0.0f; // initial 'F' value
-            initialWorldArray[y][x][3] = 1.0f; // initial 'boundary' value
+            initialWorldArray[y][x][3] = 1.0f; // initial 'attenuation' value
         }
         for (int x = ((3*WORLD_WIDTH)/7 + 30); x < (4*(WORLD_WIDTH)/7 - 30); x++) {
-            initialWorldArray[y][x][0] = 0.0f; // initial 'u' value
-            initialWorldArray[y][x][1] = 0.0f; // initial 'du/dt' value
-            initialWorldArray[y][x][2] = 0.0f; // initial 'F' value
-            initialWorldArray[y][x][3] = 1.0f; // initial 'boundary' value
+            initialWorldArray[y][x][3] = 1.0f; // initial 'attenuation' value
         }
         for (int x = (4*WORLD_WIDTH) / 7; x < WORLD_WIDTH; x++) {
-            initialWorldArray[y][x][0] = 0.0f; // initial 'u' value
-            initialWorldArray[y][x][1] = 0.0f; // initial 'du/dt' value
-            initialWorldArray[y][x][2] = 0.0f; // initial 'F' value
-            initialWorldArray[y][x][3] = 1.0f; // initial 'boundary' value
+            initialWorldArray[y][x][3] = 1.0f; // initial 'attenuation' value
         }
     }
 }
 
-void add2WorldBoundary(void)
+void addWorldSponge(int thickness, float attenuation)
+{
+    for (int y = 0; y < WORLD_HEIGHT; y++) {
+        for (int x = 0; x < WORLD_WIDTH; x++) {
+            if ((x < thickness) || ((WORLD_WIDTH - x - 1) < thickness) ||
+                (y < thickness) || ((WORLD_HEIGHT - y - 1) < thickness)) {
+                initialWorldArray[y][x][3] = attenuation;
+            }
+        }
+    }
+}
+
+void addSingleSlit(void)
 {
     for (int y = 500; y < 550; y++) {
         for (int x = 0; x < (WORLD_WIDTH - 50) / 2; x++) {
-            initialWorldArray[y][x][0] = 0.0f; // initial 'u' value
-            initialWorldArray[y][x][1] = 0.0f; // initial 'du/dt' value
-            initialWorldArray[y][x][2] = 0.0f; // initial 'F' value
-            initialWorldArray[y][x][3] = 1.0f; // initial 'boundary' value
-
-            initialWorldArray[y][WORLD_WIDTH-x][0] = 0.0f; // initial 'u' value
-            initialWorldArray[y][WORLD_WIDTH-x][1] = 0.0f; // initial 'du/dt' value
-            initialWorldArray[y][WORLD_WIDTH-x][2] = 0.0f; // initial 'F' value
-            initialWorldArray[y][WORLD_WIDTH-x][3] = 1.0f; // initial 'boundary' value
+            initialWorldArray[y][x][3] = 1.0f; // initial 'attenuation' value
+            initialWorldArray[y][WORLD_WIDTH-x][3] = 1.0f; // initial 'attenuation' value
         }
     }
 }

@@ -43,6 +43,73 @@ vec4 constant_sum_colour(float x)
 	return vec4(r, g, b, 1.0f);
 }
 
+vec3 hsv_to_rgb(vec3 hsv)
+{
+	float H = mod(hsv.x, 360.f);
+	float S = mod(hsv.y, 1.f);
+	float V = mod(hsv.z, 1.f);
+
+	float C = V * S;
+	float H_prime = H / 60;
+	float X = C * (1 - length(mod(H_prime, 2) - 1));
+	vec3 RGB1 = vec3(0.f, 0.f, 0.f);
+
+	int H_prime_ceil = int(H_prime + 1);
+	if (H_prime_ceil == 1) {
+		RGB1 = vec3(C, X, 0.f);
+	} else if (H_prime_ceil == 2) {
+		RGB1 = vec3(X, C, 0.f);
+	} else if (H_prime_ceil == 3) {
+		RGB1 = vec3(0.f, C, X);
+	} else if (H_prime_ceil == 4) {
+		RGB1 = vec3(0.f, X, C);
+	} else if (H_prime_ceil == 5) {
+		RGB1 = vec3(X, 0.f, C);
+	} else if (H_prime_ceil == 6) {
+		RGB1 = vec3(C, 0.f, X);
+	} else {
+		RGB1 = vec3(0.f, 0.f, 0.f);
+	}
+	float m = V - C;
+	vec3 RGB = RGB1 + m;
+	return RGB;
+}
+
+vec3 hsl_to_rgb(vec3 hsl)
+{
+	float H = mod(hsl.x, 360.f);
+	float S = mod(hsl.y, 1.f);
+	float L = mod(hsl.z, 1.f);
+
+	float C = (1.f - length(2.f * L - 1.f)) * S;
+	float H_prime = H / 60;
+	float X = C * (1.f - length(mod(H_prime, 2.f)- 1.f));
+
+	vec3 RGB1 = vec3(0.f, 0.f, 0.f);
+
+	int H_prime_ceil = int(H_prime + 1);
+	if (H_prime_ceil == 1) {
+		RGB1 = vec3(C, X, 0.f);
+	} else if (H_prime_ceil == 2) {
+		RGB1 = vec3(X, C, 0.f);
+	} else if (H_prime_ceil == 3) {
+		RGB1 = vec3(0.f, C, X);
+	} else if (H_prime_ceil == 4) {
+		RGB1 = vec3(0.f, X, C);
+	} else if (H_prime_ceil == 5) {
+		RGB1 = vec3(X, 0.f, C);
+	} else if (H_prime_ceil == 6) {
+		RGB1 = vec3(C, 0.f, X);
+	} else {
+		RGB1 = vec3(0.f, 0.f, 0.f);
+	}
+
+	float m = L - (C/2);
+
+	vec3 RGB = RGB1 + m;
+	return RGB;
+}
+
 void main()
 {
 	float intensity = texture(texture1, TexCoord).x;
@@ -54,9 +121,10 @@ void main()
 	} else if (colourMode == 1) {
 		FragColor = vec4(0.f, intensity, 0.f, 1.f);
 	} else if (colourMode == 2) {
-		FragColor = vec4(0.f, 0.f, intensity, 1.f);
+		FragColor = vec4(1.f, 1.f - intensity, 1.f, 1.f);
 	} else if (colourMode == 3) {
-		FragColor = linear_colour(intensity);
+		vec3 RGB = hsv_to_rgb(vec3(intensity * 360, .5f, 0.8f));
+		FragColor = vec4(RGB, 1.f);
 	} else if (colourMode == 4) {
 		FragColor = leopard(intensity);
 	} else if (colourMode == 5) {

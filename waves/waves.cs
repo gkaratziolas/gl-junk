@@ -38,7 +38,7 @@ layout(location = 6) uniform float t;
 #define BOUNDARY_ABSORB     2
 #define BOUNDARY_TOROIDAL   3
 
-#define SPONGE_WIDTH        1
+#define SPONGE_WIDTH        100
 
 int distance_squared(ivec2 p, ivec2 q)
 {
@@ -58,6 +58,11 @@ float gaussian(ivec2 p, ivec2 centre, float A, float sigma)
  * px0  p11  px2    |   x - >
  *      py2         V
  */
+
+float rand(vec2 co)
+{
+    return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
+}
 
 void main() {
     ivec2 imgSize = imageSize(oldWorld);
@@ -120,20 +125,29 @@ void main() {
 
     // Copy force through
     float new_f = 0;
-    new_f = gaussian(p11Coords, ivec2(512, 200), 10, 10) * cos(t * 10);
-    //new_f += gaussian(p11Coords, ivec2(300, 300), 10, 10) * cos(t * 9);
-    float new_boundary = p11.w;
+    //new_f += gaussian(p11Coords, ivec2(512, 200), 100, 10) * cos(t * 10);
+    //new_f += gaussian(p11Coords, ivec2(300, 300), 30, 10) * cos(t * 9);
+    float attenuation = p11.w;
 
-    vec4 outValue = vec4(new_u, new_du_dt, new_f, new_boundary);
+    float x0, y0;
+    x0 = 512 + 300 * cos(t * 0.5);
+    y0 = 512 + 300 * sin(t * 0.5);
+    new_f += gaussian(p11Coords, ivec2(x0, y0), 300, 3) * cos(t * 30);
 
-    if ((p11Coords.x < SPONGE_WIDTH) || ((imgSize.x - p11Coords.x - 1) < SPONGE_WIDTH) ||
-        (p11Coords.y < SPONGE_WIDTH) || ((imgSize.y - p11Coords.y - 1) < SPONGE_WIDTH)) {
-        outValue = vec4(0.999 * new_u, new_du_dt, 0.0, new_boundary);
-    }
+    //if ((p11Coords.x < SPONGE_WIDTH) || ((imgSize.x - p11Coords.x - 1) < SPONGE_WIDTH) ||
+    //    (p11Coords.y < SPONGE_WIDTH) || ((imgSize.y - p11Coords.y - 1) < SPONGE_WIDTH)) {
+    //    outValue = vec4(0.999 * new_u, new_du_dt, 0.0, new_boundary);
+    //}
 
-    if (new_boundary > 0.5)
+    vec4 outValue = vec4(new_u, new_du_dt, new_f, attenuation);
+    if (attenuation > 0)
     {
-        outValue = vec4(0.0, 0.0, 0.0, new_boundary);
+        if (attenuation > 1)
+            attenuation = 1;
+        if (attenuation < 0)
+            attenuation = 0;
+        float k = 1 - attenuation;
+        outValue = vec4(k * new_u, new_du_dt, new_f, attenuation);
     }
 
     imageStore(newWorld, p11Coords, outValue);
