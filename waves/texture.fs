@@ -10,10 +10,10 @@ uniform sampler2D texture1;
 uniform int colourMode;
 
 uniform float max_u;
-uniform float min_u;
-
 uniform float max_ut;
-uniform float min_ut;
+uniform float max_F;
+
+uniform float saturation;
 
 vec4 linear_colour(float x)
 {
@@ -49,6 +49,17 @@ vec4 constant_sum_colour(float x)
 	float g = (sin(pi*(x + 2.0f/3.0f)) + 1.0f) / 2.0f;
 	float b = (sin(pi*(x + 4.0f/3.0f)) + 1.0f) / 2.0f;
 	return vec4(r, g, b, 1.0f);
+}
+
+// Accepts x in range +/-1
+vec4 blue_to_red(float x)
+{
+		if (x > 0) {
+			return vec4(0.f, 0.f, x, 1.f);
+		}
+		else {
+			return vec4(-x, 0.f, 0.f, 1.f);
+		}
 }
 
 vec3 hsv_to_rgb(vec3 hsv)
@@ -120,33 +131,40 @@ vec3 hsl_to_rgb(vec3 hsl)
 
 void main()
 {
-	float intensity = 0.5 * (1 + texture(texture1, TexCoord).x);
+	float u = texture(texture1, TexCoord).x;
+	float ut = texture(texture1, TexCoord).y;
+	float F = texture(texture1, TexCoord).z;
 
-	float norm_intensity = (texture(texture1, TexCoord).x - min_u) / (max_u - min_u);
+	float mm_u = u / max_u;
+	float mm_ut = ut / max_ut;
+	float mm_F = F / max_F;
 
-	float velocity  = texture(texture1, TexCoord).y;
-	float force     = texture(texture1, TexCoord).z;
+	if (saturation > 0) {
+		mm_u  = tanh(saturation * mm_u);
+		mm_ut = tanh(saturation * mm_ut);
+		mm_F  = tanh(saturation * mm_F);
+	}
+
 
 	if (colourMode == 0) {
-		FragColor = vec4(force, 0.f, 0.f, 1.f);
+		FragColor = blue_to_red(mm_F);
 	} else if (colourMode == 1) {
-		if (norm_intensity > 0.5) {
-			FragColor = vec4(0.f, 0.f, 2 * (norm_intensity -.5f), 1.f);
-		}
-		else {
-			FragColor = vec4(1.f - 2 * norm_intensity, 0.f, 0.f, 1.f);
-		}
+		FragColor = blue_to_red(mm_u);
 	} else if (colourMode == 2) {
-		FragColor = vec4(1.f, 1.f - norm_intensity, 1.f, 1.f);
-		//FragColor = vec4(1.f, 1.f - intensity, 1.f, 1.f);
+		FragColor = blue_to_red(mm_ut);
 	} else if (colourMode == 3) {
-		vec3 RGB = hsv_to_rgb(vec3(norm_intensity * 360, .5f, 0.8f));
+		vec3 RGB;
+		if (mm_u > 0) {
+			RGB = hsv_to_rgb(vec3(0.f, mm_u, 0.99f));
+		} else {
+			RGB = hsv_to_rgb(vec3(250.f, -mm_u, 0.99f));
+		}
 		FragColor = vec4(RGB, 1.f);
 	} else if (colourMode == 4) {
-		FragColor = leopard(norm_intensity);
+		FragColor = leopard(mm_u);
 	} else if (colourMode == 5) {
-		FragColor = vec4(texture(texture1, TexCoord).x, texture(texture1, TexCoord).y, 0.0f, 1.0f);	
+		FragColor = vec4(u, ut, ut, 1.0f);	
 	} else {
-		FragColor = constant_sum_colour(norm_intensity);
+		FragColor = constant_sum_colour(mm_u);
 	}
 }

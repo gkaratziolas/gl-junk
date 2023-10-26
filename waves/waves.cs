@@ -129,20 +129,13 @@ void main() {
     // Copy force through
     float new_f = 0;
     new_f += gaussian(p11Coords, ivec2(512, 200), 100, 10) * cos(t * 10);
-    new_f += gaussian(p11Coords, ivec2(300, 300), 30, 10) * cos(t * 9);
+    //new_f += gaussian(p11Coords, ivec2(300, 300), 30, 10) * cos(t * 9);
     float attenuation = p11.w;
-
 
     //float x0, y0;
     //x0 = 512 + 300 * cos(t * 0.5);
     //y0 = 512 + 300 * sin(t * 0.5);
     //new_f += gaussian(p11Coords, ivec2(x0, y0), 300, 3) * cos(t * 30);
-
-    //if ((p11Coords.x < SPONGE_WIDTH) || ((imgSize.x - p11Coords.x - 1) < SPONGE_WIDTH) ||
-    //    (p11Coords.y < SPONGE_WIDTH) || ((imgSize.y - p11Coords.y - 1) < SPONGE_WIDTH)) {
-    //    outValue = vec4(0.999 * new_u, new_du_dt, 0.0, new_boundary);
-    //}
-
 
     vec4 outValue = vec4(new_u, new_du_dt, new_f, attenuation);
     if (attenuation > 0)
