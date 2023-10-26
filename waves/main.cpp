@@ -164,7 +164,7 @@ int main()
 
         ImGui::End();
 
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < 10; i++) {
             t += dt;
             // Move 'new' data into 'old' texture
             glCopyImageSubData(worldTextures.newTextureID, GL_TEXTURE_2D, 0, 0, 0, 0,

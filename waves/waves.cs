@@ -2,8 +2,11 @@
 
 layout(local_size_x = 32, local_size_y = 32) in;
 
-layout(location = 0, binding = 0, rgba32f) uniform readonly image2D  oldWorld;
-layout(location = 1, binding = 1, rgba32f) uniform writeonly image2D newWorld;
+//layout(location = 0, binding = 0, rgba32f) uniform readonly image2D  oldWorld;
+//layout(location = 1, binding = 1, rgba32f) uniform writeonly image2D newWorld;
+
+layout(binding = 0, rgba32f) uniform readonly image2D oldWorld;
+layout(binding = 1, rgba32f) uniform writeonly image2D newWorld;
 
 layout(location = 2) uniform float dx;
 layout(location = 3) uniform float dt;
@@ -129,6 +132,7 @@ void main() {
     //new_f += gaussian(p11Coords, ivec2(300, 300), 30, 10) * cos(t * 9);
     float attenuation = p11.w;
 
+
     float x0, y0;
     x0 = 512 + 300 * cos(t * 0.5);
     y0 = 512 + 300 * sin(t * 0.5);
@@ -138,6 +142,7 @@ void main() {
     //    (p11Coords.y < SPONGE_WIDTH) || ((imgSize.y - p11Coords.y - 1) < SPONGE_WIDTH)) {
     //    outValue = vec4(0.999 * new_u, new_du_dt, 0.0, new_boundary);
     //}
+
 
     vec4 outValue = vec4(new_u, new_du_dt, new_f, attenuation);
     if (attenuation > 0)

@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/meisg/source/repos/gl-junk/lib/glm
+# Install script for directory: C:/Users/giorgos/source/repos/gl-junk/lib/glm
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Users/meisg/source/repos/gl-junk/lib/glm/out/install/x64-Debug")
+  set(CMAKE_INSTALL_PREFIX "C:/Users/giorgos/Source/Repos/gl-junk/lib/glm/out/install/x64-Debug")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -34,8 +34,8 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/Users/meisg/source/repos/gl-junk/lib/glm/out/build/x64-Debug/glm/cmake_install.cmake")
-  include("C:/Users/meisg/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/cmake_install.cmake")
+  include("C:/Users/giorgos/source/repos/gl-junk/lib/glm/out/build/x64-Debug/glm/cmake_install.cmake")
+  include("C:/Users/giorgos/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/cmake_install.cmake")
 
 endif()
 
@@ -47,5 +47,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/meisg/source/repos/gl-junk/lib/glm/out/build/x64-Debug/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/giorgos/source/repos/gl-junk/lib/glm/out/build/x64-Debug/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

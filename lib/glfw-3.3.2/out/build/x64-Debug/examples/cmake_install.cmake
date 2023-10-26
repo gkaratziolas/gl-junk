@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/meisg/source/repos/gl-junk/lib/glfw-3.3.2/examples
+# Install script for directory: C:/Users/giorgos/source/repos/gl-junk/lib/glfw-3.3.2/examples
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Users/meisg/source/repos/gl-junk/lib/glfw-3.3.2/out/install/x64-Debug")
+  set(CMAKE_INSTALL_PREFIX "C:/Users/giorgos/Source/Repos/gl-junk/lib/glfw-3.3.2/out/install/x64-Debug")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

@@ -117,9 +117,9 @@ void main()
 	float force     = texture(texture1, TexCoord).z;
 
 	if (colourMode == 0) {
-		FragColor = vec4(force, 0.f, 0.f, 1.f);
+		FragColor = vec4((force - int(force)), 0.f, 0.f, 1.f);
 	} else if (colourMode == 1) {
-		FragColor = vec4(0.f, intensity, 0.f, 1.f);
+		FragColor = vec4(1.f, 1.f - intensity, 1.f, 1.f);
 	} else if (colourMode == 2) {
 		FragColor = vec4(1.f, 1.f - intensity, 1.f, 1.f);
 	} else if (colourMode == 3) {
@@ -130,6 +130,6 @@ void main()
 	} else if (colourMode == 5) {
 		FragColor = vec4(texture(texture1, TexCoord).x, texture(texture1, TexCoord).y, 0.0f, 1.0f);	
 	} else {
-		FragColor = constant_sum_colour(intensity);
+		FragColor = constant_sum_colour(velocity);
 	}
 }

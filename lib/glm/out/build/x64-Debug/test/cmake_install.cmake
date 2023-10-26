@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/meisg/source/repos/gl-junk/lib/glm/test
+# Install script for directory: C:/Users/giorgos/source/repos/gl-junk/lib/glm/test
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Users/meisg/source/repos/gl-junk/lib/glm/out/install/x64-Debug")
+  set(CMAKE_INSTALL_PREFIX "C:/Users/giorgos/Source/Repos/gl-junk/lib/glm/out/install/x64-Debug")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -34,12 +34,12 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/Users/meisg/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/bug/cmake_install.cmake")
-  include("C:/Users/meisg/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/core/cmake_install.cmake")
-  include("C:/Users/meisg/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/ext/cmake_install.cmake")
-  include("C:/Users/meisg/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/gtc/cmake_install.cmake")
-  include("C:/Users/meisg/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/gtx/cmake_install.cmake")
-  include("C:/Users/meisg/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/perf/cmake_install.cmake")
+  include("C:/Users/giorgos/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/bug/cmake_install.cmake")
+  include("C:/Users/giorgos/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/core/cmake_install.cmake")
+  include("C:/Users/giorgos/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/ext/cmake_install.cmake")
+  include("C:/Users/giorgos/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/gtc/cmake_install.cmake")
+  include("C:/Users/giorgos/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/gtx/cmake_install.cmake")
+  include("C:/Users/giorgos/source/repos/gl-junk/lib/glm/out/build/x64-Debug/test/perf/cmake_install.cmake")
 
 endif()
 
