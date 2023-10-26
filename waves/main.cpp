@@ -87,7 +87,7 @@ int main()
     GLuint computeProgramID = loadComputeShader("waves.cs");
     if (computeProgramID == false)
         return -1;
-    Shader ourShader("texture.vs", "texture.fs"); 
+    Shader ourShader("texture.vs", "texture.fs");
     struct _worldTextures worldTextures = genWorldTextures();
 
     glEnable(GL_DEPTH_TEST);
@@ -143,6 +143,8 @@ int main()
     int colourMode = 0;
     float t = 0;
 
+    GLfloat* buffer = new GLfloat[WORLD_WIDTH * WORLD_HEIGHT * 4];
+
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
 
@@ -164,7 +166,7 @@ int main()
 
         ImGui::End();
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 20; i++) {
             t += dt;
             // Move 'new' data into 'old' texture
             glCopyImageSubData(worldTextures.newTextureID, GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -194,15 +196,48 @@ int main()
             count++;
         }
 
+        glBindTexture(GL_TEXTURE_2D, worldTextures.oldTextureID);
+        glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_FLOAT, buffer);
+        //glBindTexture(GL_TEXTURE_2D, 0);
+
+        float min_u = -2;// -3;
+        float max_u = 2;// 3;
+        float min_ut = -20;
+        float max_ut = 20;
+        int x;
+        for (x = 0; x < WORLD_WIDTH * WORLD_HEIGHT * 4; x += 4) {
+            if (buffer[x] > max_u)
+                max_u = buffer[x];
+            if (buffer[x] < min_u)
+                min_u = buffer[x];
+            if (buffer[x + 1] > max_ut)
+                max_ut = buffer[x + 1];
+            if (buffer[x + 1] < min_ut)
+                min_ut = buffer[x + 1];
+        }
+
+        if (max_u > (-min_u)) {
+            min_u = -max_u;
+        }
+        else {
+            max_u = -min_u;
+        }
+
         // render
         ourShader.use();
         ourShader.setInt("colourMode", colourMode);
+        ourShader.setFloat("max_u", max_u);
+        ourShader.setFloat("min_u", min_u);
+        ourShader.setFloat("min_ut", min_ut);
+        ourShader.setFloat("max_ut", max_ut);
         glBindVertexArray(VAO); 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, worldTextures.newTextureID);
 
         std::cout << count << " (" << t << ")" << std::endl;
+        std::cout << max_u << " " << min_u << std::endl;
+        std::cout << max_ut << " " << min_ut << std::endl;
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -213,7 +248,7 @@ int main()
         if (randomize_pending == true) {
             zeroWorldArray();
             //drawWorldArraySpot(WORLD_WIDTH/2, 100, 100);
-            addWorldSponge(100, 0.001);
+            addWorldSponge(100, 0.001f);
 
             if (walls == 1) {
                 addSingleSlit();
@@ -229,6 +264,7 @@ int main()
     glDeleteBuffers(1, &VBO);
     // glfw: terminate, clearing all previously allocated GLFW resources.
     glfwTerminate();
+    delete[] buffer;
     return 0;
 }
 

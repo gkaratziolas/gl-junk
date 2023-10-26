@@ -1,4 +1,6 @@
 #version 430 core
+precision mediump float;
+
 out vec4 FragColor;
 
 in vec2 TexCoord;
@@ -6,6 +8,12 @@ in vec2 TexCoord;
 // texture sampler
 uniform sampler2D texture1;
 uniform int colourMode;
+
+uniform float max_u;
+uniform float min_u;
+
+uniform float max_ut;
+uniform float min_ut;
 
 vec4 linear_colour(float x)
 {
@@ -112,24 +120,33 @@ vec3 hsl_to_rgb(vec3 hsl)
 
 void main()
 {
-	float intensity = texture(texture1, TexCoord).x;
+	float intensity = 0.5 * (1 + texture(texture1, TexCoord).x);
+
+	float norm_intensity = (texture(texture1, TexCoord).x - min_u) / (max_u - min_u);
+
 	float velocity  = texture(texture1, TexCoord).y;
 	float force     = texture(texture1, TexCoord).z;
 
 	if (colourMode == 0) {
-		FragColor = vec4((force - int(force)), 0.f, 0.f, 1.f);
+		FragColor = vec4(force, 0.f, 0.f, 1.f);
 	} else if (colourMode == 1) {
-		FragColor = vec4(1.f, 1.f - intensity, 1.f, 1.f);
+		if (norm_intensity > 0.5) {
+			FragColor = vec4(0.f, 0.f, 2 * (norm_intensity -.5f), 1.f);
+		}
+		else {
+			FragColor = vec4(1.f - 2 * norm_intensity, 0.f, 0.f, 1.f);
+		}
 	} else if (colourMode == 2) {
-		FragColor = vec4(1.f, 1.f - intensity, 1.f, 1.f);
+		FragColor = vec4(1.f, 1.f - norm_intensity, 1.f, 1.f);
+		//FragColor = vec4(1.f, 1.f - intensity, 1.f, 1.f);
 	} else if (colourMode == 3) {
-		vec3 RGB = hsv_to_rgb(vec3(intensity * 360, .5f, 0.8f));
+		vec3 RGB = hsv_to_rgb(vec3(norm_intensity * 360, .5f, 0.8f));
 		FragColor = vec4(RGB, 1.f);
 	} else if (colourMode == 4) {
-		FragColor = leopard(intensity);
+		FragColor = leopard(norm_intensity);
 	} else if (colourMode == 5) {
 		FragColor = vec4(texture(texture1, TexCoord).x, texture(texture1, TexCoord).y, 0.0f, 1.0f);	
 	} else {
-		FragColor = constant_sum_colour(velocity);
+		FragColor = constant_sum_colour(norm_intensity);
 	}
 }
